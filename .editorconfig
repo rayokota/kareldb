@@ -1,0 +1,19 @@
+# http://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+
+[*.java]
+indent_style = space
+indent_size = 4
+
+[*.md]
+indent_style = space
+indent_size = 2
+
+[*.xml]
+indent_style = space
+indent_size = 4

@@ -1,0 +1,14 @@
+{
+  "namespace": "example",
+  "type": "record",
+  "name": "users",
+  "fields": [ {
+    "name": "name",
+    "type": "string",
+    "sql.key.index" : 0
+    }, {
+    "name": "age",
+    "type": "int"
+    }
+  ]
+}
