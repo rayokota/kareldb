@@ -50,7 +50,7 @@ public abstract class Schema extends AbstractSchema implements Configurable, Clo
     @Override
     public abstract Map<String, org.apache.calcite.schema.Table> getTableMap();
 
-    public abstract void createTable(String tableName, Map<String, Object> operand, RelDef rowType);
+    public abstract Table createTable(String tableName, Map<String, Object> operand, RelDef rowType);
 
     public abstract void alterTable(String tableName,
                                     List<SqlAlterTableExtension.Action> actions,

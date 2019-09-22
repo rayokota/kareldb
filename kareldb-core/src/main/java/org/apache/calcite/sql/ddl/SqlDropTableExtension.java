@@ -26,6 +26,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.util.Pair;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,19 +54,15 @@ public class SqlDropTableExtension extends SqlDropObject {
         for (String p : path) {
             schema = schema.getSubSchema(p, true);
         }
+
+        final Pair<CalciteSchema, String> pair =
+            SqlDdlNodes.schema(context, true, name);
         switch (getKind()) {
             case DROP_TABLE:
                 Schema schemaPlus = schema.plus().unwrap(Schema.class);
-                Table table = schemaPlus.getTable(name.getSimple());
-                if (table != null) {
-                    try {
-                        ((io.kareldb.schema.Table) table).close();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
                 schemaPlus.dropTable(name.getSimple());
-                if (table == null && !ifExists) {
+                boolean existed = pair.left.removeTable(name.getSimple());
+                if (!existed && !ifExists) {
                     throw SqlUtil.newContextException(name.getParserPosition(),
                         RESOURCE.tableNotFound(name.getSimple()));
                 }

@@ -30,8 +30,10 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeImpl;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.ColumnStrategy;
+import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.schema.impl.ViewTable;
 import org.apache.calcite.schema.impl.ViewTableMacro;
@@ -83,7 +85,7 @@ public class SqlCreateTableExtension extends SqlCreateTable {
 
         final Pair<CalciteSchema, String> pair =
             SqlDdlNodes.schema(context, true, name);
-        final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
+        final JavaTypeFactory typeFactory = context.getTypeFactory();
         final RelDataType queryRowType;
         if (query != null) {
             // A bit of a hack: pretend it's a view, to get its row type
@@ -126,19 +128,7 @@ public class SqlCreateTableExtension extends SqlCreateTable {
         for (Ord<SqlNode> c : Ord.zip(columnList)) {
             if (c.e instanceof SqlColumnDeclaration) {
                 final SqlColumnDeclaration d = (SqlColumnDeclaration) c.e;
-                RelDataType type = d.dataType.deriveType(validator, true);
-                final Pair<CalciteSchema, String> pairForType =
-                    SqlDdlNodes.schema(context, true, d.dataType.getTypeName());
-                if (type == null) {
-                    CalciteSchema.TypeEntry typeEntry = pairForType.left.getType(pairForType.right, false);
-                    if (typeEntry != null) {
-                        type = typeEntry.getType().apply(typeFactory);
-                        if (d.dataType.getNullable() != null
-                            && d.dataType.getNullable() != type.isNullable()) {
-                            type = typeFactory.createTypeWithNullability(type, d.dataType.getNullable());
-                        }
-                    }
-                }
+                final RelDataType type = d.dataType.deriveType(validator, true);
                 builder.add(d.name.getSimple(), type);
                 if (d.strategy != ColumnStrategy.VIRTUAL) {
                     storedBuilder.add(d.name.getSimple(), type);
@@ -211,7 +201,8 @@ public class SqlCreateTableExtension extends SqlCreateTable {
         }
         // Table does not exist. Create it.
         String tableName = name.getSimple();
-        schemaPlus.createTable(tableName, null, new RelDef(rowType, keyFields, strategies));
+        Table table = schemaPlus.createTable(tableName, null, new RelDef(rowType, keyFields, strategies));
+        pair.left.add(pair.right, table);
         if (query != null) {
             SqlDdlNodes.populate(name, query, context);
         }

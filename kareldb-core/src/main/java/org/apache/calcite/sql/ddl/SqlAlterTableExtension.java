@@ -120,7 +120,7 @@ public class SqlAlterTableExtension extends SqlAlter
 
         final Pair<CalciteSchema, String> pair =
             SqlDdlNodes.schema(context, true, name);
-        final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl();
+        final JavaTypeFactory typeFactory = context.getTypeFactory();
         final List<SqlNode> columnList = this.columnList.getList();
         final ImmutableList.Builder<ColumnDef> b = ImmutableList.builder();
         final RelDataTypeFactory.Builder builder = typeFactory.builder();
@@ -131,19 +131,7 @@ public class SqlAlterTableExtension extends SqlAlter
         for (Ord<SqlNode> c : Ord.zip(columnList)) {
             if (c.e instanceof SqlColumnDeclaration) {
                 final SqlColumnDeclaration d = (SqlColumnDeclaration) c.e;
-                RelDataType type = d.dataType.deriveType(validator, true);
-                final Pair<CalciteSchema, String> pairForType =
-                    SqlDdlNodes.schema(context, true, d.dataType.getTypeName());
-                if (type == null) {
-                    CalciteSchema.TypeEntry typeEntry = pairForType.left.getType(pairForType.right, false);
-                    if (typeEntry != null) {
-                        type = typeEntry.getType().apply(typeFactory);
-                        if (d.dataType.getNullable() != null
-                            && d.dataType.getNullable() != type.isNullable()) {
-                            type = typeFactory.createTypeWithNullability(type, d.dataType.getNullable());
-                        }
-                    }
-                }
+                final RelDataType type = d.dataType.deriveType(validator, true);
                 builder.add(d.name.getSimple(), type);
                 if (d.strategy != ColumnStrategy.VIRTUAL) {
                     storedBuilder.add(d.name.getSimple(), type);

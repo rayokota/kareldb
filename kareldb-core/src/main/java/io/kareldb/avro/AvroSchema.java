@@ -21,6 +21,7 @@ import io.kareldb.schema.ColumnStrategy;
 import io.kareldb.schema.ColumnType;
 import io.kareldb.schema.RelDef;
 import io.kareldb.schema.Schema;
+import io.kareldb.schema.Table;
 import org.apache.avro.JsonProperties;
 import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
@@ -109,13 +110,14 @@ public class AvroSchema extends Schema {
     }
 
     @Override
-    public void createTable(String tableName,
-                            Map<String, Object> operand,
-                            RelDef rowType) {
+    public Table createTable(String tableName,
+                             Map<String, Object> operand,
+                             RelDef rowType) {
         AvroTable table = new AvroTable(this, tableName, rowType);
         table.configure(operand != null ? operand : getConfigs());
         table.init();
         tableMap.put(tableName, table);
+        return table;
     }
 
     @Override

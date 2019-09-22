@@ -126,9 +126,9 @@ public class KafkaSchema extends Schema {
     }
 
     @Override
-    public void createTable(String tableName,
-                            Map<String, Object> operand,
-                            RelDef rowType) {
+    public Table createTable(String tableName,
+                             Map<String, Object> operand,
+                             RelDef rowType) {
         KafkaSchemaValue latest = getLatestSchemaValue(tableName);
         // Verify the previous version is null or deleted
         if (latest != null && latest.getAction() != Action.DROP) {
@@ -140,7 +140,9 @@ public class KafkaSchema extends Schema {
             new KafkaSchemaValue(tableName, version, avroSchema.toString(), Action.CREATE, version));
         schemaMap.flush();
         // Initialize the table
-        ((Table) tableMap.get(tableName)).init();
+        Table table = (Table) tableMap.get(tableName);
+        table.init();
+        return table;
     }
 
     @Override
@@ -196,11 +198,12 @@ public class KafkaSchema extends Schema {
         if (latest == null || latest.getAction() == Action.DROP) {
             return false;
         }
+        boolean exists = tableMap.get(tableName) != null;
         int version = latest.getVersion();
         schemaMap.put(new KafkaSchemaKey(tableName, version + 1),
             new KafkaSchemaValue(tableName, version + 1, null, Action.DROP, latest.getEpoch()));
         schemaMap.flush();
-        return false;
+        return exists;
     }
 
     @Override
