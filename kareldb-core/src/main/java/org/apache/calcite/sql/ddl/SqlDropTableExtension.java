@@ -58,8 +58,8 @@ public class SqlDropTableExtension extends SqlDropObject {
         switch (getKind()) {
             case DROP_TABLE:
                 Schema schemaPlus = schema.plus().unwrap(Schema.class);
-                schemaPlus.dropTable(name.getSimple());
-                boolean existed = pair.left.removeTable(name.getSimple());
+                boolean existed = schemaPlus.dropTable(name.getSimple());
+                pair.left.removeTable(name.getSimple());
                 if (!existed && !ifExists) {
                     throw SqlUtil.newContextException(name.getParserPosition(),
                         RESOURCE.tableNotFound(name.getSimple()));

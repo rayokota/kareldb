@@ -91,7 +91,7 @@ fi
 
 # Memory options
 if [ -z "$KARELDB_HEAP_OPTS" ]; then
-  KARELDB_HEAP_OPTS="-Xmx512M"
+  KARELDB_HEAP_OPTS="-Xmx4G"
 fi
 
 # JVM performance options
