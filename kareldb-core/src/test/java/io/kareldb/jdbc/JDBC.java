@@ -1204,29 +1204,6 @@ public class JDBC {
         }
 
         for (rows = 0; rs.next(); rows++) {
-
-            // Assert warnings on result set, but only for embedded, cf
-            // DERBY-159.
-//            if (TestConfiguration.getCurrent().getJDBCClient().isEmbedded() &&
-//                warnings != null) {
-//
-//                SQLWarning w = rs.getWarnings();
-//                String wstr = null;
-//
-//                if (w != null) {
-//                    wstr = w.getSQLState();
-//                }
-//
-//                try {
-//                    Assert.assertEquals(
-//                            "Warning assertion error on row " + (rows+1),
-//                            warnings[rows],
-//                            wstr);
-//                } catch (AssertionFailedError e) {
-//                    throw addRsToReport(e, rsmd, seen, seenRow, rs);
-//                }
-//            }
-
             /* If we have more actual rows than expected rows, don't
              * try to assert the row.  Instead just keep iterating
              * to see exactly how many rows the actual result set has.

@@ -57,10 +57,8 @@ public class KarelDbMain {
                 System.exit(1);
             }
             KarelDbConfig config = new KarelDbConfig(args[0]);
-            Properties props = getPropsFromFile(args[0]);
-            Map<?, ?> configs = new HashMap<>(props);
             KarelDbEngine engine = KarelDbEngine.getInstance();
-            engine.configure((Map<String, ?>) configs);
+            engine.configure(config);
             engine.init();
             LOG.info("Starting leader election...");
             KarelDbLeaderElector elector = new KarelDbLeaderElector(config);

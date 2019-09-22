@@ -73,19 +73,6 @@ public class MetaImpl extends CalciteMetaImplShim {
     }
 
     @Override
-    public Iterable<Object> createIterable(StatementHandle stmt, QueryState state, Signature signature,
-                                           List<TypedValue> parameters, Frame firstFrame) {
-        begin();
-        try {
-            return super.createIterable(stmt, state, signature, parameters, firstFrame);
-        } finally {
-            if (isAutoCommit()) {
-                commit(connection.handle);
-            }
-        }
-    }
-
-    @Override
     public ExecuteResult prepareAndExecute(StatementHandle h,
                                            String sql, long maxRowCount, int maxRowsInFirstFrame,
                                            PrepareCallback callback) throws NoSuchStatementException {

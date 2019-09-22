@@ -74,7 +74,11 @@ public class KarelDbEngine implements Configurable, Closeable {
     }
 
     public void configure(Map<String, ?> configs) {
-        this.config = new KarelDbConfig(configs);
+        configure(new KarelDbConfig(configs));
+    }
+
+    public void configure(KarelDbConfig config) {
+        this.config = config;
     }
 
     public void init() {
@@ -82,7 +86,6 @@ public class KarelDbEngine implements Configurable, Closeable {
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         Cache<Long, Long> commits;
         if (bootstrapServers != null) {
-            // TODO make configurable
             String id = "_commits";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
@@ -97,7 +100,6 @@ public class KarelDbEngine implements Configurable, Closeable {
         commits.init();
         Cache<Long, Long> timestamps;
         if (bootstrapServers != null) {
-            // TODO make configurable
             String id = "_timestamps";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
             configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);

@@ -14,25 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.kareldb.jdbc;
+package io.kareldb.server.jdbc;
 
-import org.apache.calcite.util.TestUtil;
+import io.kareldb.jdbc.JDBC;
+import io.kareldb.server.utils.RemoteClusterTestHarness;
+import org.apache.calcite.avatica.remote.Driver;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-public class BasicTest extends BaseJDBCTestCase {
+public class BasicTest extends RemoteClusterTestHarness {
 
     private static final Logger LOG = LoggerFactory.getLogger(BasicTest.class);
 
@@ -234,29 +237,9 @@ public class BasicTest extends BaseJDBCTestCase {
         }
     }
 
-    private void output(ResultSet resultSet, PrintStream out)
-        throws SQLException {
-        final ResultSetMetaData metaData = resultSet.getMetaData();
-        final int columnCount = metaData.getColumnCount();
-        while (resultSet.next()) {
-            for (int i = 1; ; i++) {
-                out.print(resultSet.getString(i));
-                if (i < columnCount) {
-                    out.print(", ");
-                } else {
-                    out.println();
-                    break;
-                }
-            }
-        }
-    }
-
-    private Void output(ResultSet resultSet) {
-        try {
-            output(resultSet, System.out);
-        } catch (SQLException e) {
-            throw TestUtil.rethrow(e);
-        }
-        return null;
+    protected Connection createConnection() throws SQLException {
+        String url = "jdbc:avatica:remote:url=http://localhost:" + serverPort;
+        Connection conn = DriverManager.getConnection(url);
+        return conn;
     }
 }

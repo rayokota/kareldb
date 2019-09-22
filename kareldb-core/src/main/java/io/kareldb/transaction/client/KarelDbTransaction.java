@@ -39,9 +39,7 @@ public class KarelDbTransaction extends AbstractTransaction<KarelDbCellId> {
         KarelDbTransaction transaction = currentTransaction.get();
         if (transaction == null) {
             throw new IllegalStateException("No current transaction");
-            // TODO remove
-            //} else if (transaction.getStatus() == Status.ROLLEDBACK) {
-        } else if (transaction.getStatus() != Status.RUNNING) {
+        } else if (transaction.getStatus() == Status.ROLLEDBACK) {
             throw new IllegalStateException("Transaction was already " + transaction.getStatus());
         }
         return transaction;

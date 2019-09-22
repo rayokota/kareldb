@@ -41,6 +41,13 @@ limitations under the License.
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.kareldb</groupId>
+            <artifactId>kareldb-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.kcache</groupId>
             <artifactId>kcache</artifactId>
         </dependency>

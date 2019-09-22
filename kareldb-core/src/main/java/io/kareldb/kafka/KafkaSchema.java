@@ -72,7 +72,6 @@ public class KafkaSchema extends Schema {
     public void configure(Map<String, ?> operand) {
         super.configure(operand);
         Map<String, Object> configs = new HashMap<>(operand);
-        // TODO make configurable
         String id = "_tables";
         configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
         configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
