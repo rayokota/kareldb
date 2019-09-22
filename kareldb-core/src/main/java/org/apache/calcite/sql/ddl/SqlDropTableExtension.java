@@ -19,7 +19,6 @@ package org.apache.calcite.sql.ddl;
 import io.kareldb.schema.Schema;
 import org.apache.calcite.jdbc.CalcitePrepare;
 import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.schema.Table;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
@@ -28,7 +27,6 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.Pair;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.apache.calcite.util.Static.RESOURCE;

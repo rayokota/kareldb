@@ -38,11 +38,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static io.kcache.KafkaCacheConfig.getPropsFromFile;
 
 public class KarelDbMain {
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbMain.class);

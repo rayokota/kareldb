@@ -20,31 +20,18 @@ import io.kareldb.KarelDbEngine;
 import io.kareldb.server.KarelDbMain;
 import io.kareldb.server.leader.KarelDbLeaderElector;
 import io.kareldb.utils.ClusterTestHarness;
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.CoreUtils;
-import kafka.utils.TestUtils;
-import kafka.zk.EmbeddedZookeeper;
 import org.apache.calcite.avatica.server.HttpServer;
 import org.apache.commons.io.FileUtils;
-import org.apache.kafka.common.network.ListenerName;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.kafka.common.utils.Time;
-import org.apache.kafka.common.utils.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Option;
-import scala.Option$;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.util.List;
 import java.util.Properties;
-import java.util.Vector;
 
 /**
  * Test harness to run against a real, local Kafka cluster. This is essentially
