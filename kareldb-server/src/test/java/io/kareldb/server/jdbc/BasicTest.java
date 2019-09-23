@@ -118,7 +118,17 @@ public class BasicTest extends RemoteClusterTestHarness {
             JDBC.assertFullResultSet(resultSet, expectedRows);
             resultSet.close();
 
-            x = s.executeUpdate("delete from t2 where i = 3");
+            x = s.executeUpdate("update t2 set i = 10 where i = 3");
+            assertThat(x, is(1));
+            resultSet = s.executeQuery("select * from t2");
+            expectedRows = new String[][]{
+                {"1", "2", "hi"},
+                {"10", "4", "world"}
+            };
+            JDBC.assertFullResultSet(resultSet, expectedRows);
+            resultSet.close();
+
+            x = s.executeUpdate("delete from t2 where i = 10");
             assertThat(x, is(1));
             resultSet = s.executeQuery("select * from t2");
             expectedRows = new String[][]{
