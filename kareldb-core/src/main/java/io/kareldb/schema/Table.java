@@ -81,6 +81,8 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
 
     public abstract void init();
 
+    public abstract void sync();
+
     public Schema getSchema() {
         return schema;
     }

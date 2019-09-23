@@ -43,6 +43,8 @@ public abstract class Schema extends AbstractSchema implements Configurable, Clo
 
     public abstract void init();
 
+    public abstract void sync();
+
     public Map<String, Object> getConfigs() {
         return configs;
     }

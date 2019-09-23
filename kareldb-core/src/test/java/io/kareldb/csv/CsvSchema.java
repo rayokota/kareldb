@@ -99,6 +99,10 @@ public class CsvSchema extends Schema {
     }
 
     @Override
+    public void sync() {
+    }
+
+    @Override
     public Table createTable(String tableName,
                              Map<String, Object> operand,
                              RelDef rowType) {

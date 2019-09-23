@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -85,11 +86,22 @@ public class KafkaSchema extends Schema {
 
     @Override
     public void init() {
-        this.schemaMap.init();
+        schemaMap.init();
         // Initialize tables in parallel
         CompletableFuture
             .allOf(tableMap.values().stream()
                 .map(t -> CompletableFuture.runAsync(((Table) t)::init))
+                .toArray(CompletableFuture[]::new))
+            .join();
+    }
+
+    @Override
+    public void sync() {
+        schemaMap.sync();
+        // Sync tables in parallel
+        CompletableFuture
+            .allOf(tableMap.values().stream()
+                .map(t -> CompletableFuture.runAsync(((Table) t)::sync))
                 .toArray(CompletableFuture[]::new))
             .join();
     }

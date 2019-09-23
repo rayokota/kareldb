@@ -74,7 +74,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             engine.configure(config);
             engine.init();
             LOG.info("Starting leader election...");
-            KarelDbLeaderElector elector = new KarelDbLeaderElector(config);
+            KarelDbLeaderElector elector = new KarelDbLeaderElector(config, engine);
             elector.init();
             boolean isLeader = elector.isLeader();
             LOG.info("Leader elected, starting server...");

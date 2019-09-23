@@ -89,6 +89,10 @@ public class AvroTable extends FilterableTable {
         }
     }
 
+    @Override
+    public void sync() {
+    }
+
     private Source getSource(Map<String, ?> operand, String fileName) {
         if (fileName == null) {
             return null;

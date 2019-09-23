@@ -18,7 +18,9 @@
 package io.kareldb.server.leader;
 
 import io.kareldb.KarelDbConfig;
+import io.kareldb.KarelDbEngine;
 import io.kareldb.server.handler.UrlProvider;
+import io.kcache.exceptions.CacheTimeoutException;
 import org.apache.kafka.clients.ApiVersions;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.ClientUtils;
@@ -66,6 +68,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private static final AtomicInteger KDB_CLIENT_ID_SEQUENCE = new AtomicInteger(1);
     private static final String JMX_PREFIX = "kareldb";
 
+    private final KarelDbEngine engine;
     private final int initTimeout;
     private final String clientId;
     private final ConsumerNetworkClient client;
@@ -74,15 +77,16 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final long retryBackoffMs;
     private final KarelDbCoordinator coordinator;
     private KarelDbIdentity myIdentity;
-    private volatile KarelDbIdentity leader;
+    private final AtomicReference<KarelDbIdentity> leader = new AtomicReference<>();
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
     private final CountDownLatch joinedLatch = new CountDownLatch(1);
 
-    public KarelDbLeaderElector(KarelDbConfig config) throws KarelDbElectionException {
+    public KarelDbLeaderElector(KarelDbConfig config, KarelDbEngine engine) throws KarelDbElectionException {
         try {
-            clientId = "kdb-" + KDB_CLIENT_ID_SEQUENCE.getAndIncrement();
+            this.engine = engine;
+            this.clientId = "kdb-" + KDB_CLIENT_ID_SEQUENCE.getAndIncrement();
 
             this.myIdentity = findIdentity(
                 config.getList(KarelDbConfig.LISTENERS_CONFIG),
@@ -242,7 +246,14 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
 
     @Override
     public Optional<String> url() {
-        return isLeader() ? Optional.empty() : Optional.of(leader.getUrl());
+        KarelDbIdentity leader = this.leader.get();
+        if (leader == null) {
+            throw new KarelDbElectionException("Leader is unknown");
+        } else if (leader.equals(myIdentity)) {
+            return Optional.empty();
+        } else {
+            return Optional.of(leader.getUrl());
+        }
     }
 
     @Override
@@ -312,11 +323,17 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     }
 
     public boolean isLeader() {
+        KarelDbIdentity leader = this.leader.get();
         return leader != null && leader.equals(myIdentity);
     }
 
     private void setLeader(KarelDbIdentity leader) {
-        this.leader = leader;
+        KarelDbIdentity previousLeader = this.leader.getAndSet(leader);
+
+        if (leader != null && !leader.equals(previousLeader) && leader.equals(myIdentity)) {
+            LOG.info("Syncing caches...");
+            engine.sync();
+        }
     }
 
     private void stop(boolean swallowException) {

@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,6 +47,8 @@ public class KarelDbEngine implements Configurable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbEngine.class);
 
     private KarelDbConfig config;
+    private Cache<Long, Long> commits;
+    private Cache<Long, Long> timestamps;
     private KarelDbTransactionManager transactionManager;
     private Schema schema;
     private final AtomicBoolean initialized = new AtomicBoolean();
@@ -84,7 +87,6 @@ public class KarelDbEngine implements Configurable, Closeable {
     public void init() {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
-        Cache<Long, Long> commits;
         if (bootstrapServers != null) {
             String id = "_commits";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
@@ -98,7 +100,6 @@ public class KarelDbEngine implements Configurable, Closeable {
         }
         commits = Caches.concurrentCache(commits);
         commits.init();
-        Cache<Long, Long> timestamps;
         if (bootstrapServers != null) {
             String id = "_timestamps";
             configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
@@ -127,6 +128,12 @@ public class KarelDbEngine implements Configurable, Closeable {
 
     public boolean isInitialized() {
         return initialized.get();
+    }
+
+    public void sync() {
+        commits.sync();
+        timestamps.sync();
+        schema.sync();
     }
 
     public Schema getSchema() {

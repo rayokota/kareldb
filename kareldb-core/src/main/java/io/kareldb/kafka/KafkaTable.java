@@ -119,6 +119,11 @@ public class KafkaTable extends FilterableTable {
     }
 
     @Override
+    public void sync() {
+        rows.sync();
+    }
+
+    @Override
     public void close() throws IOException {
         rows.close();
     }
