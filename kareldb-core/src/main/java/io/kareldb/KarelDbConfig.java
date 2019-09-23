@@ -29,6 +29,11 @@ public class KarelDbConfig extends KafkaCacheConfig {
         "List of listeners. http and https are supported. Each listener must include the protocol, "
             + "hostname, and port. For example: http://myhost:8080, https://0.0.0.0:8081";
 
+    public static final String CLUSTER_GROUP_ID_CONFIG = "cluster.group.id";
+    public static final String CLUSTER_GROUP_ID_DEFAULT = "kareldb";
+    public static final String CLUSTER_GROUP_ID_DOC =
+        "The group ID used for leader election.";
+
     public static final String LEADER_ELIGIBILITY_CONFIG = "leader.eligibility";
     public static final boolean LEADER_ELIGIBILITY_DEFAULT = true;
     public static final String LEADER_ELIGIBILITY_DOC =
@@ -54,6 +59,11 @@ public class KarelDbConfig extends KafkaCacheConfig {
                 LISTENERS_DEFAULT,
                 ConfigDef.Importance.HIGH,
                 LISTENERS_DOC)
+            .define(CLUSTER_GROUP_ID_CONFIG,
+                ConfigDef.Type.STRING,
+                CLUSTER_GROUP_ID_DEFAULT,
+                ConfigDef.Importance.HIGH,
+                CLUSTER_GROUP_ID_DOC)
             .define(LEADER_ELIGIBILITY_CONFIG,
                 ConfigDef.Type.BOOLEAN,
                 LEADER_ELIGIBILITY_DEFAULT,

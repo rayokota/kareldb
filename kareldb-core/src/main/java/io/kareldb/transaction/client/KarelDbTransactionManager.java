@@ -36,7 +36,7 @@ import org.apache.omid.transaction.TransactionException;
 import org.apache.omid.transaction.TransactionManagerException;
 import org.apache.omid.tso.RuntimeExceptionPanicker;
 import org.apache.omid.tso.TimestampOracle;
-import org.apache.omid.tso.WorldClockOracleImpl;
+import org.apache.omid.tso.TimestampOracleImpl;
 import org.apache.omid.tso.client.CellId;
 import org.apache.omid.tso.client.TSOProtocol;
 import org.slf4j.Logger;
@@ -71,7 +71,7 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
                                                         TimestampStorage timestampStorage) {
         try {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
-            TimestampOracle timestampOracle = new WorldClockOracleImpl(
+            TimestampOracle timestampOracle = new TimestampOracleImpl(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
             timestampOracle.initialize();
             PostCommitActions postCommitter = new KarelDbSyncPostCommitter(commitTable.getClient());
@@ -88,7 +88,7 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
             CommitTable.Client commitTableClient = commitTable.getClient();
             CommitTable.Writer commitTableWriter = commitTable.getWriter();
-            TimestampOracle timestampOracle = new WorldClockOracleImpl(
+            TimestampOracle timestampOracle = new TimestampOracleImpl(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
             timestampOracle.initialize();
             TSOProtocol tsoClient = new KarelDbTimestampClient(timestampOracle, commitTableWriter);

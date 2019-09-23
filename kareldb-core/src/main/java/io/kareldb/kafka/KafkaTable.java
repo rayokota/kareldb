@@ -92,14 +92,15 @@ public class KafkaTable extends FilterableTable {
         if (getRowType() == null) {
             throw new IllegalStateException("Custom tables not yet supported for Kafka");
         }
-        int epoch = (Integer) operand.get("epoch");
-        org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) operand.get("avroSchema");
-        Pair<org.apache.avro.Schema, org.apache.avro.Schema> schemas = getKeyValueSchemas(avroSchema);
-        String id = getName() + "_" + epoch;
         Map<String, Object> configs = new HashMap<>(operand);
-        configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
-        configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
-        configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, id);
+        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "kareldb-1");
+        int epoch = (Integer) configs.get("epoch");
+        org.apache.avro.Schema avroSchema = (org.apache.avro.Schema) configs.get("avroSchema");
+        Pair<org.apache.avro.Schema, org.apache.avro.Schema> schemas = getKeyValueSchemas(avroSchema);
+        String topic = getName() + "_" + epoch;
+        configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+        configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+        configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
         configs.put(KafkaCacheConfig.KAFKACACHE_ENABLE_OFFSET_COMMIT_CONFIG, true);
         String enableRocksDbStr = (String) configs.getOrDefault(KarelDbConfig.ROCKS_DB_ENABLE_CONFIG, "true");
         boolean enableRocksDb = Boolean.parseBoolean(enableRocksDbStr);
@@ -107,7 +108,7 @@ public class KafkaTable extends FilterableTable {
             KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, KarelDbConfig.ROCKS_DB_ROOT_DIR_DEFAULT);
         Comparator<byte[]> cmp = new AvroKeyComparator(schemas.left);
         Cache<byte[], byte[]> cache = enableRocksDb
-            ? new RocksDBCache<>(id, "rocksdb", rootDir, Serdes.ByteArray(), Serdes.ByteArray(), cmp)
+            ? new RocksDBCache<>(topic, "rocksdb", rootDir, Serdes.ByteArray(), Serdes.ByteArray(), cmp)
             : new InMemoryCache<>(cmp);
         this.rows = new KafkaCache<>(
             new KafkaCacheConfig(configs), Serdes.ByteArray(), Serdes.ByteArray(), null, cache);

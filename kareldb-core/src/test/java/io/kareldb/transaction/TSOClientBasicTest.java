@@ -24,7 +24,7 @@ import org.apache.omid.metrics.NullMetricsProvider;
 import org.apache.omid.timestamp.storage.TimestampStorage;
 import org.apache.omid.tso.RuntimeExceptionPanicker;
 import org.apache.omid.tso.TimestampOracle;
-import org.apache.omid.tso.WorldClockOracleImpl;
+import org.apache.omid.tso.TimestampOracleImpl;
 import org.apache.omid.tso.client.AbortException;
 import org.apache.omid.tso.client.CellId;
 import org.apache.omid.tso.client.TSOProtocol;
@@ -62,7 +62,7 @@ public class TSOClientBasicTest {
         commitTable = new KarelDbCommitTable(new InMemoryCache<>());
         commitTableClient = commitTable.getClient();
         TimestampStorage timestampStorage = new KarelDbTimestampStorage(new InMemoryCache<>());
-        TimestampOracle timestampOracle = new WorldClockOracleImpl(
+        TimestampOracle timestampOracle = new TimestampOracleImpl(
             new NullMetricsProvider(), timestampStorage, new RuntimeExceptionPanicker());
         timestampOracle.initialize();
         tsoClient = new KarelDbTimestampClient(timestampOracle, commitTable.getWriter());

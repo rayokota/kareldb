@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -87,11 +86,12 @@ public class KarelDbEngine implements Configurable, Closeable {
     public void init() {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
+        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "kareldb-1");
         if (bootstrapServers != null) {
-            String id = "_commits";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, id);
+            String topic = "_commits";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             commits = new KafkaCache<>(
                 new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
                 new InMemoryCache<>());
@@ -101,10 +101,10 @@ public class KarelDbEngine implements Configurable, Closeable {
         commits = Caches.concurrentCache(commits);
         commits.init();
         if (bootstrapServers != null) {
-            String id = "_timestamps";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, id);
+            String topic = "_timestamps";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
             timestamps = new KafkaCache<>(
                 new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
                 new InMemoryCache<>());

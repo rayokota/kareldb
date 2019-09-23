@@ -20,7 +20,6 @@ package io.kareldb.server.leader;
 import io.kareldb.KarelDbConfig;
 import io.kareldb.KarelDbEngine;
 import io.kareldb.server.handler.UrlProvider;
-import io.kcache.exceptions.CacheTimeoutException;
 import org.apache.kafka.clients.ApiVersions;
 import org.apache.kafka.clients.ClientDnsLookup;
 import org.apache.kafka.clients.ClientUtils;
@@ -102,7 +101,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
 
             this.metrics = new Metrics(metricConfig, reporters, time);
             this.retryBackoffMs = clientConfig.getLong(CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG);
-            String groupId = config.getString(KarelDbConfig.KAFKACACHE_GROUP_ID_CONFIG);
+            String groupId = config.getString(KarelDbConfig.CLUSTER_GROUP_ID_CONFIG);
             LogContext logContext = new LogContext("[KarelDB clientId=" + clientId + ", groupId="
                 + groupId + "] ");
             this.metadata = new Metadata(

@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -73,10 +72,11 @@ public class KafkaSchema extends Schema {
     public void configure(Map<String, ?> operand) {
         super.configure(operand);
         Map<String, Object> configs = new HashMap<>(operand);
-        String id = "_tables";
-        configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, id);
-        configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, id);
-        configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, id);
+        String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "kareldb-1");
+        String topic = "_tables";
+        configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+        configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+        configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
         // Always reload all tables on startup as they need to be initialized properly
         Cache<KafkaSchemaKey, KafkaSchemaValue> schemaMap = new KafkaCache<>(
             new KafkaCacheConfig(configs), new KafkaSchemaKeySerde(), new KafkaSchemaValueSerde(),
