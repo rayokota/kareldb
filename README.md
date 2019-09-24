@@ -58,7 +58,7 @@ sqlline> select * from books;
 
 To access a KarelDB server from a remote application, use an Avatica JDBC client.  A list of Avatica JDBC clients can be found [here](https://calcite.apache.org/avatica/docs/).
 
-If multiple KarelDB servers are configured with the same group ID (see the next section), then they will form a cluster and one of them will be elected as leader, while the others will become followers (replicas).  If a follower receives a request, it will be forwarded to the leader.  If the leader fails, one of the followers will be elected as the new leader.
+If multiple KarelDB servers are configured with the same cluster group ID (see [Configuration](#configuration)), then they will form a cluster and one of them will be elected as leader, while the others will become followers (replicas).  If a follower receives a request, it will be forwarded to the leader.  If the leader fails, one of the followers will be elected as the new leader.
 
 ## Embedded Mode
 
