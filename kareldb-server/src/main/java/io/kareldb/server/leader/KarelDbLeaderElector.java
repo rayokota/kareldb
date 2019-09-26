@@ -97,7 +97,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
             List<MetricsReporter> reporters = Collections.singletonList(new JmxReporter(JMX_PREFIX));
             Time time = Time.SYSTEM;
 
-            ClientConfig clientConfig = new ClientConfig(config.originalsWithPrefix("kafkastore."), false);
+            ClientConfig clientConfig = new ClientConfig(config.originalsWithPrefix("kafkacache."), false);
 
             this.metrics = new Metrics(metricConfig, reporters, time);
             this.retryBackoffMs = clientConfig.getLong(CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG);
