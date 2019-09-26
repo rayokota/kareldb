@@ -20,7 +20,7 @@ limitations under the License.
 
     <groupId>io.kareldb</groupId>
     <artifactId>kareldb-parent</artifactId>
-    <version>0.1.5-SNAPSHOT</version>
+    <version>0.1.5</version>
     <packaging>pom</packaging>
 
     <name>kareldb</name>
@@ -44,7 +44,7 @@ limitations under the License.
         <connection>scm:git:git://github.com:rayokota/kareldb.git</connection>
         <developerConnection>scm:git:git@github.com:rayokota/kareldb.git</developerConnection>
         <url>git@github.com:rayokota/kareldb.git</url>
-        <tag>head</tag>
+        <tag>kareldb-parent-0.1.5</tag>
     </scm>
 
     <modules>
