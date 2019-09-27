@@ -98,9 +98,11 @@ public class KarelDbMain {
 
             boolean testMode = false;
             if (testMode) {
+                // Single connection for testing
                 final Connection connection = DriverManager.getConnection(Driver.CONNECT_STRING_PREFIX, properties);
                 return new MetaImpl((AvaticaConnection) connection);
             } else {
+                // Multi-connection support
                 return new JdbcMeta(Driver.CONNECT_STRING_PREFIX, properties);
             }
         } catch (Exception e) {
