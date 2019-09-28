@@ -72,7 +72,7 @@ properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
 properties.put("schema.kafkacache.bootstrap.servers", bootstrapServers);
 properties.put("schema.rocksdb.root.dir", "/tmp");
 
-try (Connection conn = DriverManager.getConnection("jdbc:kareldb:", properties;
+try (Connection conn = DriverManager.getConnection("jdbc:kareldb:", properties);
      Statement s = conn.createStatement()) {
         s.execute("create table books (id int, name varchar, author varchar)");
         s.executeUpdate("insert into books values(1, 'The Trial', 'Franz Kafka')");
