@@ -16,6 +16,7 @@
  */
 package io.kareldb.server.handler;
 
+import io.kareldb.KarelDbConfig;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaUtils;
 import org.apache.calcite.avatica.metrics.MetricsSystem;
@@ -57,6 +58,7 @@ import static org.apache.calcite.avatica.remote.MetricsHelper.concat;
 public class DynamicAvaticaJsonHandler extends AbstractAvaticaHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AvaticaJsonHandler.class);
 
+    private final KarelDbConfig config;
     private final AvaticaHandler localHandler;
     private final UrlProvider urlProvider;
     private final MetricsSystem metrics;
@@ -65,16 +67,19 @@ public class DynamicAvaticaJsonHandler extends AbstractAvaticaHandler {
     private final AvaticaServerConfiguration serverConfig;
     private RpcMetadataResponse metadata;
 
-    public DynamicAvaticaJsonHandler(AvaticaHandler localHandler, UrlProvider urlProvider) {
-        this(localHandler, urlProvider, NoopMetricsSystem.getInstance(), null);
+    public DynamicAvaticaJsonHandler(KarelDbConfig config, AvaticaHandler localHandler, UrlProvider urlProvider) {
+        this(config, localHandler, urlProvider, NoopMetricsSystem.getInstance(), null);
     }
 
-    public DynamicAvaticaJsonHandler(AvaticaHandler localHandler, UrlProvider urlProvider, MetricsSystem metrics) {
-        this(localHandler, urlProvider, metrics, null);
+    public DynamicAvaticaJsonHandler(KarelDbConfig config, AvaticaHandler localHandler, UrlProvider urlProvider,
+                                     MetricsSystem metrics) {
+        this(config, localHandler, urlProvider, metrics, null);
     }
 
-    public DynamicAvaticaJsonHandler(AvaticaHandler localHandler, UrlProvider urlProvider, MetricsSystem metrics,
+    public DynamicAvaticaJsonHandler(KarelDbConfig config, AvaticaHandler localHandler, UrlProvider urlProvider,
+                                     MetricsSystem metrics,
                                      AvaticaServerConfiguration serverConfig) {
+        this.config = config;
         this.localHandler = Objects.requireNonNull(localHandler);
         this.urlProvider = Objects.requireNonNull(urlProvider);
         this.metrics = Objects.requireNonNull(metrics);
@@ -181,7 +186,12 @@ public class DynamicAvaticaJsonHandler extends AbstractAvaticaHandler {
         return metrics;
     }
 
-    private static String getJdbcUrl(String url) {
-        return "jdbc:avatica:remote:url=" + url + ";serialization=JSON";
+    private String getJdbcUrl(String url) {
+        String jdbcUrl = "jdbc:avatica:remote:url=" + url + ";serialization=JSON";
+        if (url.startsWith("https")) {
+            jdbcUrl += ";truststore=" + config.getString(KarelDbConfig.SSL_TRUSTSTORE_LOCATION_CONFIG);
+            jdbcUrl += ";truststore_password=" + config.getPassword(KarelDbConfig.SSL_TRUSTSTORE_PASSWORD_CONFIG).value();
+        }
+        return jdbcUrl;
     }
 }
