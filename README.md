@@ -118,7 +118,7 @@ KarelDB supports the following SQL types:
 - time
 - timestamp
 
-## Configuration
+## Basic Configuration
 
 KarelDB has a number of configuration properties that can be specified.  When using KarelDB as an embedded database, these properties should be prefixed with `schema.` before passing them to the JDBC driver.
 
@@ -133,6 +133,57 @@ KarelDB has a number of configuration properties that can be specified.  When us
 - `kafkacache.init.timeout.ms` - The timeout for initialization of the Kafka cache, including creation of internal topics.  Defaults to 300 seconds.
 - `kafkacache.timeout.ms` - The timeout for an operation on the Kafka cache.  Defaults to 60 seconds.
 
+## Security
+
+### HTTPS
+
+To use HTTPS, first configure the `listeners` with an `https` prefix, then specify the following properties with the appropriate values.  The `truststore` is required only when `ssl.client.authentication` is set to true.
+
+```
+ssl.truststore.location=/var/private/ssl/custom.truststore
+ssl.truststore.password=changeme
+ssl.keystore.location=/var/private/ssl/custom.keystore
+ssl.keystore.password=changeme
+ssl.key.password=changeme
+```
+
+When using the Avatica JDBC client, the `truststore` and `truststore_password` can be passed in the JDBC URL as specified [here](https://calcite.apache.org/avatica/docs/client_reference.html#truststore).
+
+### HTTP Authentication
+
+KarelDB supports both HTTP Basic Authentication and HTTP Digest Authentication, as shown below:
+
+```
+authentication.method=BASIC  # or DIGEST
+authentication.roles=admin,developer,user
+authentication.realm=KarelDb-Props  # as specified in JAAS file
+```
+
+In the above example, the JAAS file might look like
+
+```
+KarelDb-Props {
+  org.eclipse.jetty.jaas.spi.PropertyFileLoginModule required
+  file="/path/to/password-file"
+  debug="false";
+};
+```
+
+The `ProperyFileLoginModule` can be replaced with other implementations, such as `LdapLoginModule` or `JDBCLoginModule`.
+
+When starting KarelDB, the path to the JAAS file must be set as a system property.
+
+```bash
+$ export SCHEMA_REGISTRY_OPTS=-Djava.security.auth.login.config=/path/to/the/jaas_config.file
+$ bin/kareldb-start config/kareldb-secure.properties
+```
+
+When using the Avatica JDBC client, the `avatica_user` and `avatica_password` can be passed in the JDBC URL as specified [here](https://calcite.apache.org/avatica/docs/client_reference.html#avatica-user).
+
+### Kafka Authentication
+
+Authentication to the Kafka cluster is described [here](https://github.com/rayokota/kcache#security).
+ 
 ## Implementation Notes
 
 KarelDB stores table data in topics of the form `{tableName}_{generation}`.  A different generation ID is used whenever a table is dropped and re-created.
