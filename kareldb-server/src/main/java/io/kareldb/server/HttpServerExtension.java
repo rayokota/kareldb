@@ -27,6 +27,7 @@ import org.apache.kafka.common.config.ConfigException;
 import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -36,17 +37,21 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static io.kareldb.KarelDbConfig.AUTHENTICATION_METHOD_BASIC;
+import static io.kareldb.KarelDbConfig.AUTHENTICATION_METHOD_DIGEST;
+
 public class HttpServerExtension extends HttpServer {
     private static final Logger LOG = LoggerFactory.getLogger(HttpServerExtension.class);
 
     public HttpServerExtension(KarelDbIdentity identity, AvaticaHandler handler, KarelDbConfig config) {
-        super(identity.getPort(), handler, buildBasicAuthConfig(config), null,
+        super(identity.getPort(), handler, buildUserAuthConfig(config), null,
             identity.getScheme().equals("https") ? createSslContextFactory(config) : null);
     }
 
     @Override
     protected ConstraintSecurityHandler configureBasicAuthentication(Server server,
                                                                      AvaticaServerConfiguration config) {
+        LOG.info("Configuring basic auth");
         final String[] allowedRoles = config.getAllowedRoles();
         final String realm = config.getHashLoginServiceRealm();
 
@@ -57,9 +62,23 @@ public class HttpServerExtension extends HttpServer {
             allowedRoles, new BasicAuthenticator(), null, loginService);
     }
 
-    private static AvaticaServerConfiguration buildBasicAuthConfig(KarelDbConfig config) {
+    @Override
+    protected ConstraintSecurityHandler configureDigestAuthentication(Server server,
+                                                                      AvaticaServerConfiguration config) {
+        LOG.info("Configuring digest auth");
+        final String[] allowedRoles = config.getAllowedRoles();
+        final String realm = config.getHashLoginServiceRealm();
+
+        JAASLoginService loginService = new JAASLoginService(realm);
+        server.addBean(loginService);
+
+        return configureCommonAuthentication(Constraint.__DIGEST_AUTH,
+            allowedRoles, new DigestAuthenticator(), null, loginService);
+    }
+
+    private static AvaticaServerConfiguration buildUserAuthConfig(KarelDbConfig config) {
         String authMethod = config.getString(KarelDbConfig.AUTHENTICATION_METHOD_CONFIG);
-        if (!KarelDbConfig.AUTHENTICATION_METHOD_BASIC.equals(authMethod)) {
+        if (KarelDbConfig.AUTHENTICATION_METHOD_NONE.equals(authMethod)) {
             return null;
         }
 
@@ -70,7 +89,14 @@ public class HttpServerExtension extends HttpServer {
         return new AvaticaServerConfiguration() {
             @Override
             public AuthenticationType getAuthenticationType() {
-                return AuthenticationType.BASIC;
+                switch (authMethod) {
+                    case AUTHENTICATION_METHOD_BASIC:
+                        return AuthenticationType.BASIC;
+                    case AUTHENTICATION_METHOD_DIGEST:
+                        return AuthenticationType.DIGEST;
+                    default:
+                        throw new IllegalArgumentException("Unsupported authentication method " + authMethod);
+                }
             }
 
             @Override
