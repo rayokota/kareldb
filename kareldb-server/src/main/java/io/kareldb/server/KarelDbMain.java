@@ -22,7 +22,6 @@ import io.kareldb.jdbc.Driver;
 import io.kareldb.jdbc.MetaImpl;
 import io.kareldb.schema.SchemaFactory;
 import io.kareldb.server.handler.DynamicAvaticaJsonHandler;
-import io.kareldb.server.leader.KarelDbIdentity;
 import io.kareldb.server.leader.KarelDbLeaderElector;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.Meta;
@@ -33,15 +32,12 @@ import org.apache.calcite.avatica.server.AvaticaHandler;
 import org.apache.calcite.avatica.server.AvaticaJsonHandler;
 import org.apache.calcite.avatica.server.HttpServer;
 import org.apache.calcite.config.CalciteConnectionProperty;
-import org.apache.kafka.common.config.ConfigException;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -77,15 +73,11 @@ public class KarelDbMain {
     }
 
     public static HttpServer start(KarelDbConfig config, KarelDbLeaderElector elector) throws SQLException {
-        KarelDbIdentity identity = elector.getIdentity();
-        int port = identity.getPort();
         Meta meta = create(config);
         Service service = new LocalService(meta);
         AvaticaHandler localHandler = new AvaticaJsonHandler(service);
         AvaticaHandler handler = new DynamicAvaticaJsonHandler(config, localHandler, elector);
-        HttpServer server = identity.getScheme().equals("http")
-            ? new HttpServer(port, handler)
-            : new HttpServer(port, handler, null, null, createSslContextFactory(config));
+        HttpServer server = new HttpServerExtension(elector.getIdentity(), handler, config);
         server.start();
         return server;
     }
@@ -115,93 +107,6 @@ public class KarelDbMain {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        }
-    }
-
-    private static SslContextFactory createSslContextFactory(KarelDbConfig config) {
-        SslContextFactory sslContextFactory = new SslContextFactory();
-        if (!config.getString(KarelDbConfig.SSL_KEYSTORE_LOCATION_CONFIG).isEmpty()) {
-            sslContextFactory.setKeyStorePath(
-                config.getString(KarelDbConfig.SSL_KEYSTORE_LOCATION_CONFIG)
-            );
-            sslContextFactory.setKeyStorePassword(
-                config.getPassword(KarelDbConfig.SSL_KEYSTORE_PASSWORD_CONFIG).value()
-            );
-            sslContextFactory.setKeyManagerPassword(
-                config.getPassword(KarelDbConfig.SSL_KEY_PASSWORD_CONFIG).value()
-            );
-            sslContextFactory.setKeyStoreType(
-                config.getString(KarelDbConfig.SSL_KEYSTORE_TYPE_CONFIG)
-            );
-
-            if (!config.getString(KarelDbConfig.SSL_KEYMANAGER_ALGORITHM_CONFIG).isEmpty()) {
-                sslContextFactory.setKeyManagerFactoryAlgorithm(
-                    config.getString(KarelDbConfig.SSL_KEYMANAGER_ALGORITHM_CONFIG));
-            }
-        }
-
-        configureClientAuth(config, sslContextFactory);
-
-        List<String> enabledProtocols = config.getList(KarelDbConfig.SSL_ENABLED_PROTOCOLS_CONFIG);
-        if (!enabledProtocols.isEmpty()) {
-            sslContextFactory.setIncludeProtocols(enabledProtocols.toArray(new String[0]));
-        }
-
-        List<String> cipherSuites = config.getList(KarelDbConfig.SSL_CIPHER_SUITES_CONFIG);
-        if (!cipherSuites.isEmpty()) {
-            sslContextFactory.setIncludeCipherSuites(cipherSuites.toArray(new String[0]));
-        }
-
-        sslContextFactory.setEndpointIdentificationAlgorithm(
-            config.getString(KarelDbConfig.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG));
-
-        if (!config.getString(KarelDbConfig.SSL_TRUSTSTORE_LOCATION_CONFIG).isEmpty()) {
-            sslContextFactory.setTrustStorePath(
-                config.getString(KarelDbConfig.SSL_TRUSTSTORE_LOCATION_CONFIG)
-            );
-            sslContextFactory.setTrustStorePassword(
-                config.getPassword(KarelDbConfig.SSL_TRUSTSTORE_PASSWORD_CONFIG).value()
-            );
-            sslContextFactory.setTrustStoreType(
-                config.getString(KarelDbConfig.SSL_TRUSTSTORE_TYPE_CONFIG)
-            );
-
-            if (!config.getString(KarelDbConfig.SSL_TRUSTMANAGER_ALGORITHM_CONFIG).isEmpty()) {
-                sslContextFactory.setTrustManagerFactoryAlgorithm(
-                    config.getString(KarelDbConfig.SSL_TRUSTMANAGER_ALGORITHM_CONFIG)
-                );
-            }
-        }
-
-        sslContextFactory.setProtocol(config.getString(KarelDbConfig.SSL_PROTOCOL_CONFIG));
-        if (!config.getString(KarelDbConfig.SSL_PROVIDER_CONFIG).isEmpty()) {
-            sslContextFactory.setProtocol(config.getString(KarelDbConfig.SSL_PROVIDER_CONFIG));
-        }
-
-        sslContextFactory.setRenegotiationAllowed(false);
-
-        return sslContextFactory;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void configureClientAuth(KarelDbConfig config, SslContextFactory sslContextFactory) {
-        String clientAuthentication = config.getString(KarelDbConfig.SSL_CLIENT_AUTHENTICATION_CONFIG);
-
-        switch (clientAuthentication) {
-            case KarelDbConfig.SSL_CLIENT_AUTHENTICATION_REQUIRED:
-                sslContextFactory.setNeedClientAuth(true);
-                break;
-            case KarelDbConfig.SSL_CLIENT_AUTHENTICATION_REQUESTED:
-                sslContextFactory.setWantClientAuth(true);
-                break;
-            case KarelDbConfig.SSL_CLIENT_AUTHENTICATION_NONE:
-                break;
-            default:
-                throw new ConfigException(
-                    "Unexpected value for {} configuration: {}",
-                    KarelDbConfig.SSL_CLIENT_AUTHENTICATION_CONFIG,
-                    clientAuthentication
-                );
         }
     }
 }

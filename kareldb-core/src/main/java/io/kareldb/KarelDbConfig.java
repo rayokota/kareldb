@@ -21,6 +21,9 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class KarelDbConfig extends KafkaCacheConfig {
@@ -141,6 +144,32 @@ public class KarelDbConfig extends KafkaCacheConfig {
         "The endpoint identification algorithm to validate the server hostname using the "
             + "server certificate.";
     public static final String SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DEFAULT = null;
+
+    public static final String AUTHENTICATION_METHOD_CONFIG = "authentication.method";
+    public static final String AUTHENTICATION_METHOD_NONE = "NONE";
+    public static final String AUTHENTICATION_METHOD_BASIC = "BASIC";
+    public static final String AUTHENTICATION_METHOD_BEARER = "BEARER";
+    public static final String AUTHENTICATION_METHOD_DOC =
+        "Method of authentication. Must be BASIC or BEARER to enable authentication. "
+            + "For BASIC, you must supply a valid JAAS config file for the "
+            + "'java.security.auth.login.config' system property for the appropriate authentication "
+            + "provider. For BEARER, you must implement your own Application.createAuthenticator() "
+            + "& Application.createLoginService() methods.";
+    public static final ConfigDef.ValidString AUTHENTICATION_METHOD_VALIDATOR =
+        ConfigDef.ValidString.in(
+            AUTHENTICATION_METHOD_NONE,
+            AUTHENTICATION_METHOD_BASIC,
+            AUTHENTICATION_METHOD_BEARER
+        );
+
+    public static final String AUTHENTICATION_REALM_CONFIG = "authentication.realm";
+    public static final String AUTHENTICATION_REALM_DOC =
+        "Security realm to be used in authentication.";
+
+    public static final String AUTHENTICATION_ROLES_CONFIG = "authentication.roles";
+    public static final String AUTHENTICATION_ROLES_DOC = "Valid roles to authenticate against.";
+    public static final List<String> AUTHENTICATION_ROLES_DEFAULT =
+        Collections.unmodifiableList(Arrays.asList("*"));
 
     private static final ConfigDef config;
 
@@ -267,6 +296,25 @@ public class KarelDbConfig extends KafkaCacheConfig {
                 SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DEFAULT,
                 Importance.LOW,
                 SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_DOC
+            ).define(
+                AUTHENTICATION_METHOD_CONFIG,
+                Type.STRING,
+                AUTHENTICATION_METHOD_NONE,
+                AUTHENTICATION_METHOD_VALIDATOR,
+                Importance.LOW,
+                AUTHENTICATION_METHOD_DOC
+            ).define(
+                AUTHENTICATION_REALM_CONFIG,
+                Type.STRING,
+                "",
+                Importance.LOW,
+                AUTHENTICATION_REALM_DOC
+            ).define(
+                AUTHENTICATION_ROLES_CONFIG,
+                Type.LIST,
+                AUTHENTICATION_ROLES_DEFAULT,
+                Importance.LOW,
+                AUTHENTICATION_ROLES_DOC
             );
     }
 
