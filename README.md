@@ -182,7 +182,7 @@ When using the Avatica JDBC client, the `avatica_user` and `avatica_password` ca
 
 ### Kafka Authentication
 
-Authentication to the Kafka cluster is described [here](https://github.com/rayokota/kcache#security).
+Authentication to a secure Kafka cluster is described [here](https://github.com/rayokota/kcache#security).
  
 ## Implementation Notes
 
