@@ -174,7 +174,7 @@ The `ProperyFileLoginModule` can be replaced with other implementations, such as
 When starting KarelDB, the path to the JAAS file must be set as a system property.
 
 ```bash
-$ export SCHEMA_REGISTRY_OPTS=-Djava.security.auth.login.config=/path/to/the/jaas_config.file
+$ export KARELDB_OPTS=-Djava.security.auth.login.config=/path/to/the/jaas_config.file
 $ bin/kareldb-start config/kareldb-secure.properties
 ```
 
