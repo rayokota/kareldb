@@ -56,6 +56,7 @@ limitations under the License.
         <!-- This list is in alphabetical order. -->
         <avatica.version>1.15.0</avatica.version>
         <avro.version>1.9.1</avro.version>
+        <bouncycastle.version>1.61</bouncycastle.version>
         <calcite.version>1.21.0</calcite.version>
         <commons-lang3.version>3.8</commons-lang3.version>
         <findbugs.version>3.0.1</findbugs.version>
@@ -246,6 +247,11 @@ limitations under the License.
                         <artifactId>protobuf-java</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>

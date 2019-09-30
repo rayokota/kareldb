@@ -42,9 +42,9 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     private static final Logger LOG = LoggerFactory.getLogger(RemoteClusterTestHarness.class);
 
     private File tempDir;
+    protected Properties props;
     protected Integer serverPort;
     protected HttpServer server;
-
 
     public RemoteClusterTestHarness() {
         super();
@@ -58,16 +58,14 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     public void setUp() throws Exception {
         super.setUp();
         tempDir = Files.createTempDir();
+        props = new Properties();
         setUpServer();
     }
 
     private void setUpServer() {
         try {
-            Properties props = new Properties();
-            serverPort = choosePort();
-            props.put(KarelDbConfig.LISTENERS_CONFIG, "http://0.0.0.0:" + serverPort);
-            props.put(KarelDbConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            props.put(KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, tempDir.getAbsolutePath());
+            serverPort = 8765;//choosePort();
+            injectKarelDbProperties(props);
 
             KarelDbConfig config = new KarelDbConfig(props);
             KarelDbEngine engine = KarelDbEngine.getInstance();
@@ -85,6 +83,12 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
             LOG.error("Server died unexpectedly: ", e);
             System.exit(1);
         }
+    }
+
+    protected void injectKarelDbProperties(Properties props) {
+        props.put(KarelDbConfig.LISTENERS_CONFIG, "http://0.0.0.0:" + serverPort);
+        props.put(KarelDbConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, tempDir.getAbsolutePath());
     }
 
     /**
