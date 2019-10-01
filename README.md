@@ -137,11 +137,9 @@ KarelDB has a number of configuration properties that can be specified.  When us
 
 ### HTTPS
 
-To use HTTPS, first configure the `listeners` with an `https` prefix, then specify the following properties with the appropriate values.  The `truststore` is required only when `ssl.client.authentication` is set to true.
+To use HTTPS, first configure the `listeners` with an `https` prefix, then specify the following properties with the appropriate values.
 
 ```
-ssl.truststore.location=/var/private/ssl/custom.truststore
-ssl.truststore.password=changeme
 ssl.keystore.location=/var/private/ssl/custom.keystore
 ssl.keystore.password=changeme
 ssl.key.password=changeme
