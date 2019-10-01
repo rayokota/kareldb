@@ -17,10 +17,12 @@
 package io.kareldb.server.jdbc;
 
 import io.kareldb.server.utils.RemoteClusterHttpAuthTestHarness;
+import org.junit.Ignore;
 
 /**
  * Test class for HTTP Digest authentication.
  */
+@Ignore
 public class DigestAuthHttpServerTest extends RemoteClusterHttpAuthTestHarness {
 
     @Override

@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.login.Configuration;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -70,6 +71,7 @@ public abstract class RemoteClusterHttpAuthTestHarness extends RemoteClusterTest
         jaasConfigFile = new File(tempDir, "jaas_config.file");
         writePasswordFile(passwordFile);
         writeJaasFile(jaasConfigFile, passwordFile);
+        Configuration.setConfiguration(null);
         System.setProperty("java.security.auth.login.config", jaasConfigFile.getAbsolutePath());
         super.setUp();
     }
@@ -85,8 +87,9 @@ public abstract class RemoteClusterHttpAuthTestHarness extends RemoteClusterTest
 
     @After
     public void tearDown() throws Exception {
-        System.clearProperty("java.security.auth.login.config");
         super.tearDown();
+        System.clearProperty("java.security.auth.login.config");
+        Configuration.setConfiguration(null);
     }
 
     @Test

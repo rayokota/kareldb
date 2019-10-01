@@ -17,10 +17,12 @@
 package io.kareldb.server.jdbc;
 
 import io.kareldb.server.utils.RemoteClusterHttpAuthTestHarness;
+import org.junit.Ignore;
 
 /**
  * Test class for HTTP Basic authentication.
  */
+@Ignore
 public class BasicAuthHttpServerTest extends RemoteClusterHttpAuthTestHarness {
 
     @Override

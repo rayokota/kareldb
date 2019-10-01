@@ -20,6 +20,7 @@ import io.kareldb.KarelDbConfig;
 import io.kareldb.server.utils.RemoteClusterSslTestHarness;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class SslDriverTest extends RemoteClusterSslTestHarness {
     private static final Logger LOG = LoggerFactory.getLogger(SslDriverTest.class);
 

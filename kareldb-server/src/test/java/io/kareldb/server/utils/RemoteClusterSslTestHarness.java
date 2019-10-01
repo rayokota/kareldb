@@ -47,6 +47,7 @@ public abstract class RemoteClusterSslTestHarness extends RemoteClusterTestHarne
 
     @Before
     public void setUp() throws Exception {
+        Configuration.setConfiguration(null);
         super.setUp();
     }
 
@@ -55,7 +56,6 @@ public abstract class RemoteClusterSslTestHarness extends RemoteClusterTestHarne
         super.injectKarelDbProperties(props);
         props.put(KarelDbConfig.LISTENERS_CONFIG, "https://localhost:" + serverPort);
 
-        Configuration.setConfiguration(null);
         props.put(KarelDbConfig.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         try {
             File trustStoreFile = File.createTempFile("truststore", ".jks");
@@ -79,5 +79,6 @@ public abstract class RemoteClusterSslTestHarness extends RemoteClusterTestHarne
     @After
     public void tearDown() throws Exception {
         super.tearDown();
+        Configuration.setConfiguration(null);
     }
 }

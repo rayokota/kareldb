@@ -28,6 +28,8 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -67,6 +69,8 @@ import static org.junit.Assert.fail;
  */
 public abstract class BaseJDBCTestCase extends ClusterTestHarness {
 
+    private static final Logger LOG = LoggerFactory.getLogger(BaseJDBCTestCase.class);
+
     private static final boolean ORDERED = true;
     private static final boolean UNORDERED = false;
 
@@ -104,26 +108,26 @@ public abstract class BaseJDBCTestCase extends ClusterTestHarness {
 
     @After
     public void tearDown() throws Exception {
-        if (statements != null) {
-            for (Statement s : statements) {
-                s.close();
-            }
-            // Allow gc'ing of all those statements.
-            statements = null;
-        }
-        if (connections != null) {
-            for (Connection c : connections) {
-                JDBC.cleanup(c);
-            }
-            // Allow gc'ing of all those connections.
-            connections = null;
-        }
-        conn = null;
-        KarelDbEngine.closeInstance();
         try {
+            if (statements != null) {
+                for (Statement s : statements) {
+                    s.close();
+                }
+                // Allow gc'ing of all those statements.
+                statements = null;
+            }
+            if (connections != null) {
+                for (Connection c : connections) {
+                    JDBC.cleanup(c);
+                }
+                // Allow gc'ing of all those connections.
+                connections = null;
+            }
+            conn = null;
+            KarelDbEngine.closeInstance();
             FileUtils.deleteDirectory(tempDir);
         } catch (Exception e) {
-            // ignore
+            LOG.warn("Exception during tearDown", e);
         }
         super.tearDown();
     }
