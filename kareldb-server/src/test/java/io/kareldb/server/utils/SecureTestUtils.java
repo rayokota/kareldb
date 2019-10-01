@@ -47,6 +47,7 @@ public class SecureTestUtils {
         Map<String, X509Certificate> certificateMap = new HashMap<>();
 
         File clientKSFile = File.createTempFile("CKeystore", ".jks");
+        clientKSFile.deleteOnExit();
         String keyStorePassword = new Password("Client-KS-Password").value();
 
         for (int i = 0; i < numberOfCerts; i++) {

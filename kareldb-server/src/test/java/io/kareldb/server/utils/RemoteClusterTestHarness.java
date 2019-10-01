@@ -41,7 +41,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemoteClusterTestHarness.class);
 
-    private File tempDir;
+    protected File tempDir;
     protected Properties props;
     protected Integer serverPort;
     protected HttpServer server;
@@ -57,14 +57,16 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        tempDir = Files.createTempDir();
+        if (tempDir == null) {
+            tempDir = Files.createTempDir();
+        }
         props = new Properties();
         setUpServer();
     }
 
     private void setUpServer() {
         try {
-            serverPort = 8765;//choosePort();
+            serverPort = choosePort();
             injectKarelDbProperties(props);
 
             KarelDbConfig config = new KarelDbConfig(props);
