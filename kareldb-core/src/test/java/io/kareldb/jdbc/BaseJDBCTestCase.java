@@ -120,7 +120,11 @@ public abstract class BaseJDBCTestCase extends ClusterTestHarness {
         }
         conn = null;
         KarelDbEngine.closeInstance();
-        FileUtils.deleteDirectory(tempDir);
+        try {
+            FileUtils.deleteDirectory(tempDir);
+        } catch (Exception e) {
+            // ignore
+        }
         super.tearDown();
     }
 

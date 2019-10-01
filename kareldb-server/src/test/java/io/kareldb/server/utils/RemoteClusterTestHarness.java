@@ -124,7 +124,11 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     public void tearDown() throws Exception {
         server.stop();
         KarelDbEngine.closeInstance();
-        FileUtils.deleteDirectory(tempDir);
+        try {
+            FileUtils.deleteDirectory(tempDir);
+        } catch (Exception e) {
+            // ignore
+        }
         super.tearDown();
     }
 }

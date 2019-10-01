@@ -85,6 +85,7 @@ public abstract class RemoteClusterHttpAuthTestHarness extends RemoteClusterTest
 
     @After
     public void tearDown() throws Exception {
+        System.clearProperty("java.security.auth.login.config");
         super.tearDown();
     }
 
