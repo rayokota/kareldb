@@ -160,6 +160,8 @@ public class KarelDbEngine implements Configurable, Closeable {
     public void close() throws IOException {
         transactionManager.close();
         schema.close();
+        timestamps.close();
+        commits.close();
     }
 
     @SuppressWarnings("unchecked")
