@@ -75,8 +75,9 @@ public class VersionedCache implements Closeable {
 
     private static List<VersionedValue> getAll(
         NavigableMap<Long, VersionedValue> rowdata, long minVersion, long maxVersion) {
-        List<VersionedValue> all = new ArrayList<>(rowdata.subMap(minVersion, true, maxVersion, true).values());
-        Collections.reverse(all);
+        List<VersionedValue> all = new ArrayList<>(rowdata.subMap(minVersion, true, maxVersion, true)
+            .descendingMap()
+            .values());
         return all;
     }
 
