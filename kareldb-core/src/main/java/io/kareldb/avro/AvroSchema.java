@@ -206,7 +206,7 @@ public class AvroSchema extends Schema {
                 if (AVRO_LOGICAL_DECIMAL.equalsIgnoreCase(logicalType)) {
                     Object scaleObj = schema.getObjectProp(AVRO_LOGICAL_DECIMAL_SCALE_PROP);
                     if (!(scaleObj instanceof Number)) {
-                        throw new IllegalArgumentException("scale must be specified and must be a number.");
+                        throw new IllegalArgumentException("Scale must be specified and must be a number.");
                     }
                     int scale = ((Number) scaleObj).intValue();
 
@@ -216,7 +216,7 @@ public class AvroSchema extends Schema {
                         if (!(precisionObj instanceof Number)) {
                             throw new IllegalArgumentException(AVRO_LOGICAL_DECIMAL_PRECISION_PROP
                                 + " property must be an Integer."
-                                + " https://avro.apache.org/docs/1.7.7/spec.html#Decimal");
+                                + " https://avro.apache.org/docs/1.9.1/spec.html#Decimal");
                         }
                         precision = ((Number) precisionObj).intValue();
                     }

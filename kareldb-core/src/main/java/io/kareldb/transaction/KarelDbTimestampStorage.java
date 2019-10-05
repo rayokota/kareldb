@@ -42,7 +42,7 @@ public class KarelDbTimestampStorage implements TimestampStorage {
     public void updateMaxTimestamp(long previousMaxTimestamp, long newMaxTimestamp) throws IOException {
         if (newMaxTimestamp < 0) {
             LOG.error("Negative value received for maxTimestamp: {}", newMaxTimestamp);
-            throw new IllegalArgumentException("Negative value received for maxTimestamp" + newMaxTimestamp);
+            throw new IllegalArgumentException("Negative value received for maxTimestamp " + newMaxTimestamp);
         }
         boolean updated;
         if (previousMaxTimestamp == INITIAL_MAX_TS_VALUE) {

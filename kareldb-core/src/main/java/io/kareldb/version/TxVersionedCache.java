@@ -103,7 +103,7 @@ public class TxVersionedCache implements Closeable {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
             List<VersionedValue> values = snapshotFilter.get(tx, key);
             if (values.size() > 0) {
-                throw new IllegalStateException("Primary key constraint violation" + Arrays.toString(key));
+                throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(key));
             }
             addWriteSetElement(tx, new KarelDbCellId(cache, key, tx.getWriteTimestamp()));
             cache.put(key, tx.getWriteTimestamp(), value);
