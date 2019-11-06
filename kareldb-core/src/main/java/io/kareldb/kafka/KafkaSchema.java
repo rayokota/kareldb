@@ -114,14 +114,13 @@ public class KafkaSchema extends Schema {
     public List<KafkaSchemaValue> getLatestSchemaValuesDescending(String name) {
         KafkaSchemaKey key1 = new KafkaSchemaKey(name, MIN_VERSION);
         KafkaSchemaKey key2 = new KafkaSchemaKey(name, MAX_VERSION);
-        List<KafkaSchemaValue> schemas = Streams.streamOf(schemaMap.range(key1, true, key2, false))
+        // Get all schemas with the same epoch in descending order
+        List<KafkaSchemaValue> schemas = Streams.streamOf(schemaMap.descendingCache().range(key2, false, key1, true))
             .map(kv -> kv.value)
             .collect(Collectors.toList());
         if (schemas.isEmpty()) {
             return schemas;
         }
-        // Get all schemas with the same epoch in descending order
-        Collections.reverse(schemas);
         int epoch = schemas.get(0).getEpoch();
         return schemas.stream()
             .filter(s -> s.getEpoch() == epoch)

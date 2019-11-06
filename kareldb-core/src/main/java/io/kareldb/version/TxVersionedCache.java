@@ -85,7 +85,7 @@ public class TxVersionedCache implements Closeable {
     }
 
     public List<VersionedValue> getAll(Comparable[] key) {
-        Lock lock = striped.get(key).readLock();
+        Lock lock = striped.get(Arrays.asList(key)).readLock();
         lock.lock();
         try {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
@@ -97,7 +97,7 @@ public class TxVersionedCache implements Closeable {
     }
 
     public void put(Comparable[] key, Comparable[] value) {
-        Lock lock = striped.get(key).writeLock();
+        Lock lock = striped.get(Arrays.asList(key)).writeLock();
         lock.lock();
         try {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
@@ -118,7 +118,7 @@ public class TxVersionedCache implements Closeable {
 
     public boolean replace(Comparable[] oldKey, Comparable[] oldValue,
                            Comparable[] newKey, Comparable[] newValue) {
-        Iterable<ReadWriteLock> locks = striped.bulkGet(ImmutableList.of(oldKey, newKey));
+        Iterable<ReadWriteLock> locks = striped.bulkGet(ImmutableList.of(Arrays.asList(oldKey), Arrays.asList(newKey)));
         List<Lock> writeLocks = Streams.streamOf(locks)
             .map(ReadWriteLock::writeLock)
             .collect(Collectors.toList());
@@ -152,7 +152,7 @@ public class TxVersionedCache implements Closeable {
     }
 
     public void remove(Comparable[] key) {
-        Lock lock = striped.get(key).writeLock();
+        Lock lock = striped.get(Arrays.asList(key)).writeLock();
         lock.lock();
         try {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
