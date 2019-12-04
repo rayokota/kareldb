@@ -66,7 +66,7 @@ KarelDB can also be used in embedded mode.  Here is an example:
 
 ```java
 Properties properties = new Properties();
-properties.put("schemaFactory", "io.kareldb.schema.SchemaFactory);
+properties.put("schemaFactory", "io.kareldb.schema.SchemaFactory");
 properties.put("parserFactory", "org.apache.calcite.sql.parser.parserextension.ExtensionSqlParserImpl#FACTORY");
 properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
 properties.put("schema.kafkacache.bootstrap.servers", bootstrapServers);
