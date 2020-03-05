@@ -69,18 +69,12 @@ public class CalciteMetaImplShim extends CalciteMetaImpl {
             }
             callback.execute();
             final MetaResultSet metaResultSet =
-                new MetaResultSetImpl(h.connectionId, h.id, false, signature, null, updateCount);
+                MetaResultSet.create(h.connectionId, h.id, false, signature, null, updateCount);
             return new ExecuteResult(ImmutableList.of(metaResultSet));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         // TODO: share code with prepare and createIterable
-    }
-
-    public static class MetaResultSetImpl extends MetaResultSet {
-        protected MetaResultSetImpl(String connectionId, int statementId, boolean ownStatement, Meta.Signature signature, Meta.Frame firstFrame, long updateCount) {
-            super(connectionId, statementId, ownStatement, signature, firstFrame, updateCount);
-        }
     }
 
     /**
