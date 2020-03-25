@@ -16,8 +16,8 @@
 data: {
   parser: {
     # Generated parser implementation class package and name
-    package: "org.apache.calcite.sql.parser.ddl",
-    class: "SqlDdlParserImpl",
+    package: "org.apache.calcite.sql.parser.parserextension",
+    class: "ExtensionSqlParserImpl",
 
     # List of import statements.
     imports: [
@@ -25,6 +25,9 @@ data: {
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
       "org.apache.calcite.sql.ddl.SqlDdlNodes"
+      "org.apache.calcite.sql.ddl.SqlAlterTableExtension",
+      "org.apache.calcite.sql.ddl.SqlCreateTableExtension",
+      "org.apache.calcite.sql.ddl.SqlDropTableExtension",
       "java.util.Map"
       "java.util.HashMap"
     ]
@@ -401,6 +404,7 @@ data: {
     # List of methods for parsing extensions to "ALTER <scope>" calls.
     # Each must accept arguments "(SqlParserPos pos, String scope)".
     alterStatementParserMethods: [
+      "SqlAlterTable"
     ]
 
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
