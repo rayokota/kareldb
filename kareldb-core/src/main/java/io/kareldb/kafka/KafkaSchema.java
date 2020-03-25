@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -227,24 +226,26 @@ public class KafkaSchema extends Schema {
 
     private class TableUpdateHandler implements CacheUpdateHandler<KafkaSchemaKey, KafkaSchemaValue> {
         @Override
-        public void handleUpdate(KafkaSchemaKey kafkaSchemaKey, KafkaSchemaValue kafkaSchemaValue) {
-            String tableName = kafkaSchemaKey.getTableName();
+        public void handleUpdate(KafkaSchemaKey schemaKey,
+                                 KafkaSchemaValue schemaValue,
+                                 KafkaSchemaValue oldSchemaValue) {
+            String tableName = schemaKey.getTableName();
             org.apache.avro.Schema avroSchema;
             RelDef rowType;
             Table table;
-            switch (kafkaSchemaValue.getAction()) {
+            switch (schemaValue.getAction()) {
                 case CREATE:
-                    avroSchema = AvroUtils.parseSchema(kafkaSchemaValue.getSchema());
+                    avroSchema = AvroUtils.parseSchema(schemaValue.getSchema());
                     rowType = AvroSchema.toRowType(avroSchema);
                     Map<String, Object> configs = new HashMap<>(getConfigs());
                     configs.put("avroSchema", avroSchema);
-                    configs.put("epoch", kafkaSchemaValue.getEpoch());
+                    configs.put("epoch", schemaValue.getEpoch());
                     table = new KafkaTable(KafkaSchema.this, avroSchema.getName(), rowType);
                     table.configure(configs);
                     tableMap.put(tableName, table);
                     break;
                 case ALTER:
-                    avroSchema = AvroUtils.parseSchema(kafkaSchemaValue.getSchema());
+                    avroSchema = AvroUtils.parseSchema(schemaValue.getSchema());
                     rowType = AvroSchema.toRowType(avroSchema);
                     table = (Table) tableMap.get(tableName);
                     table.setRelDef(rowType);

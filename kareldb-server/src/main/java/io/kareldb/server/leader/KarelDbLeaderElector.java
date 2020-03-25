@@ -114,7 +114,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
                 = config.getList(KarelDbConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
             List<InetSocketAddress> addresses = ClientUtils.parseAndValidateAddresses(bootstrapServers,
                 clientConfig.getString(CommonClientConfigs.CLIENT_DNS_LOOKUP_CONFIG));
-            this.metadata.bootstrap(addresses, time.milliseconds());
+            this.metadata.bootstrap(addresses);
             String metricGrpPrefix = "kareldb";
 
             ChannelBuilder channelBuilder = ClientUtils.createChannelBuilder(clientConfig, time);
