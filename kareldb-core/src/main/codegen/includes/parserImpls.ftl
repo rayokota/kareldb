@@ -99,36 +99,6 @@ void Option(List<SqlNode> list) :
     }
 }
 
-Pair<List<SqlAlterTableExtension.Action>, SqlNodeList> AlterTableElementList() :
-{
-    final List<SqlAlterTableExtension.Action> actions = new ArrayList<SqlAlterTableExtension.Action>();
-    final List<SqlNode> list = new ArrayList<SqlNode>();
-}
-{
-    AlterTableElement(actions, list)
-    (
-        <COMMA> AlterTableElement(actions, list)
-    )*
-    {
-        return Pair.of(actions, new SqlNodeList(list, Span.of(list).pos()));
-    }
-}
-
-void AlterTableElement(List<SqlAlterTableExtension.Action> actions, List<SqlNode> list) :
-{
-    final SqlIdentifier id;
-}
-{
-    <ADD> { actions.add(SqlAlterTableExtension.Action.ADD); }
-    TableElement(list)
-    |
-    <ALTER> { actions.add(SqlAlterTableExtension.Action.ALTER); }
-    TableElement(list)
-    |
-    <DROP> { actions.add(SqlAlterTableExtension.Action.DROP); }
-    id = SimpleIdentifier() { list.add(id); }
-}
-
 SqlNodeList TableElementList() :
 {
     final Span s;
@@ -252,20 +222,6 @@ void AttributeDef(List<SqlNode> list) :
     }
 }
 
-SqlAlterTableExtension SqlAlterTable(Span s) :
-{
-    final boolean ifExists;
-    final SqlIdentifier id;
-    Pair<List<SqlAlterTableExtension.Action>, SqlNodeList> tableElementList = null;
-}
-{
-    <TABLE> ifExists = IfExistsOpt() id = CompoundIdentifier()
-    [ tableElementList = AlterTableElementList() ]
-    {
-        return new SqlAlterTableExtension(s.end(this), ifExists, id, tableElementList.left, tableElementList.right);
-    }
-}
-
 SqlCreate SqlCreateType(Span s, boolean replace) :
 {
     final SqlIdentifier id;
@@ -298,7 +254,7 @@ SqlCreate SqlCreateTable(Span s, boolean replace) :
     [ tableElementList = TableElementList() ]
     [ <AS> query = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY) ]
     {
-        return new SqlCreateTableExtension(s.end(this), replace, ifNotExists, id,
+        return SqlDdlNodes.createTable(s.end(this), replace, ifNotExists, id,
             tableElementList, query);
     }
 }
@@ -417,7 +373,7 @@ SqlDrop SqlDropTable(Span s, boolean replace) :
 }
 {
     <TABLE> ifExists = IfExistsOpt() id = CompoundIdentifier() {
-        return new SqlDropTableExtension(s.end(this), ifExists, id);
+        return SqlDdlNodes.dropTable(s.end(this), ifExists, id);
     }
 }
 
@@ -454,5 +410,3 @@ SqlDrop SqlDropFunction(Span s, boolean replace) :
         return SqlDdlNodes.dropFunction(s.end(this), ifExists, id);
     }
 }
-
-// End parserImpls.ftl
