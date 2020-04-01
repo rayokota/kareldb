@@ -58,7 +58,7 @@ limitations under the License.
         <avro.version>1.9.2</avro.version>
         <bouncycastle.version>1.64</bouncycastle.version>
         <calcite.version>1.22.0</calcite.version>
-        <commons-lang3.version>3.9</commons-lang3.version>
+        <commons-lang3.version>3.10</commons-lang3.version>
         <findbugs.version>3.0.2</findbugs.version>
         <!-- We support (and test against) Guava versions between
              19.0 and 27.1. Default is 19.0 due to Cassandra adapter. -->
