@@ -65,7 +65,7 @@ limitations under the License.
         <guava.version>19.0</guava.version>
         <!-- Require Hadoop 2.7.4+ due to HADOOP-14586 -->
         <hamcrest.version>2.2</hamcrest.version>
-        <jackson.version>2.10.3</jackson.version>
+        <jackson.version>2.11.0</jackson.version>
         <javacc-maven-plugin.version>2.6</javacc-maven-plugin.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
         <junit.version>4.12</junit.version>
