@@ -54,7 +54,7 @@ limitations under the License.
 
     <properties>
         <!-- This list is in alphabetical order. -->
-        <avatica.version>1.16.0</avatica.version>
+        <avatica.version>1.17.0</avatica.version>
         <avro.version>1.9.2</avro.version>
         <bouncycastle.version>1.65</bouncycastle.version>
         <calcite.version>1.23.0</calcite.version>
