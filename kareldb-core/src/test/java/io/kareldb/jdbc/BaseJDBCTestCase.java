@@ -487,7 +487,7 @@ public abstract class BaseJDBCTestCase extends ClusterTestHarness {
         Properties properties = new Properties();
         properties.put(CalciteConnectionProperty.SCHEMA_FACTORY.camelName(), SchemaFactory.class.getName());
         properties.put(CalciteConnectionProperty.PARSER_FACTORY.camelName(),
-            "org.apache.calcite.sql.parser.parserextension.ExtensionSqlParserImpl#FACTORY");
+            "org.apache.calcite.sql.ddl.ExtensionDdlExecutor#PARSER_FACTORY");
         properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
         properties.put("schema.kafkacache.bootstrap.servers", bootstrapServers);
         properties.put("schema.rocksdb.enable", "true");

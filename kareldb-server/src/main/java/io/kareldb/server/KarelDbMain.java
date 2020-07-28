@@ -89,7 +89,7 @@ public class KarelDbMain {
             properties.put(CalciteConnectionProperty.SCHEMA_FACTORY.camelName(), SchemaFactory.class.getName());
             properties.put(CalciteConnectionProperty.SCHEMA.camelName(), "default");
             properties.put(CalciteConnectionProperty.PARSER_FACTORY.camelName(),
-                "org.apache.calcite.sql.parser.parserextension.ExtensionSqlParserImpl#FACTORY");
+                "org.apache.calcite.sql.ddl.ExtensionDdlExecutor#PARSER_FACTORY");
             properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
             for (Map.Entry<String, String> entry : configs.entrySet()) {
                 properties.put("schema." + entry.getKey(), entry.getValue());

@@ -16,20 +16,11 @@
  */
 package org.apache.calcite.sql.ddl;
 
-import io.kareldb.schema.Schema;
-import org.apache.calcite.jdbc.CalcitePrepare;
-import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.util.Pair;
-
-import java.util.List;
-
-import static org.apache.calcite.util.Static.RESOURCE;
 
 /**
  * Parse tree for {@code DROP TABLE} statement.
@@ -43,30 +34,5 @@ public class SqlDropTableExtension extends SqlDropObject {
      */
     public SqlDropTableExtension(SqlParserPos pos, boolean ifExists, SqlIdentifier name) {
         super(OPERATOR, pos, ifExists, name);
-    }
-
-    @Override
-    public void execute(CalcitePrepare.Context context) {
-        final List<String> path = context.getDefaultSchemaPath();
-        CalciteSchema schema = context.getRootSchema();
-        for (String p : path) {
-            schema = schema.getSubSchema(p, true);
-        }
-
-        final Pair<CalciteSchema, String> pair =
-            SqlDdlNodes.schema(context, true, name);
-        switch (getKind()) {
-            case DROP_TABLE:
-                Schema schemaPlus = schema.plus().unwrap(Schema.class);
-                boolean existed = schemaPlus.dropTable(name.getSimple());
-                pair.left.removeTable(name.getSimple());
-                if (!existed && !ifExists) {
-                    throw SqlUtil.newContextException(name.getParserPosition(),
-                        RESOURCE.tableNotFound(name.getSimple()));
-                }
-                break;
-            default:
-                throw new AssertionError(getKind());
-        }
     }
 }
