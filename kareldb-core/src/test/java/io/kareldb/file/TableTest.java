@@ -121,8 +121,7 @@ public class TableTest {
                      new PropBuilder()
                          .set(CalciteConnectionProperty.MODEL, jsonPath("model"))
                          .set(CalciteConnectionProperty.PARSER_FACTORY,
-                             "org.apache.calcite.sql.parser.parserextension"
-                                 + ".ExtensionSqlParserImpl#FACTORY")
+                             "org.apache.calcite.sql.ddl.ExtensionDdlExecutor#PARSER_FACTORY")
                          .build())) {
 
             Statement s = connection.createStatement();
@@ -183,8 +182,7 @@ public class TableTest {
                      new PropBuilder()
                          .set(CalciteConnectionProperty.MODEL, jsonPath("avro"))
                          .set(CalciteConnectionProperty.PARSER_FACTORY,
-                             "org.apache.calcite.sql.parser.parserextension"
-                                 + ".ExtensionSqlParserImpl#FACTORY")
+                             "org.apache.calcite.sql.ddl.ExtensionDdlExecutor#PARSER_FACTORY")
                          .build())) {
 
             Statement s = connection.createStatement();

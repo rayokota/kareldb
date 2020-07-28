@@ -63,7 +63,6 @@ public final class AlterTableTest extends BaseJDBCTestCase {
         st.executeUpdate("insert into t3 values 2");
         st.executeUpdate("insert into t3 values 3");
         st.executeUpdate("insert into t4 values 1, 2, 3");
-        st.executeUpdate("create schema emptyschema");
     }
 
     private void checkWarning(Statement st, String expectedWarning)
