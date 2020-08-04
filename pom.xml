@@ -70,7 +70,7 @@ limitations under the License.
         <jetty.version>9.4.15.v20190215</jetty.version>
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.12</kafka.scala.version>
-        <kafka.version>2.4.1</kafka.version>
+        <kafka.version>2.6.0</kafka.version>
         <kcache.version>3.1.2</kcache.version>
         <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
