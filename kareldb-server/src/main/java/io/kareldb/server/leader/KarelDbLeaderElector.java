@@ -31,8 +31,10 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
 import org.apache.kafka.common.metrics.JmxReporter;
+import org.apache.kafka.common.metrics.KafkaMetricsContext;
 import org.apache.kafka.common.metrics.MetricConfig;
 import org.apache.kafka.common.metrics.Metrics;
+import org.apache.kafka.common.metrics.MetricsContext;
 import org.apache.kafka.common.metrics.MetricsReporter;
 import org.apache.kafka.common.network.ChannelBuilder;
 import org.apache.kafka.common.network.Selector;
@@ -94,12 +96,14 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
             Map<String, String> metricsTags = new LinkedHashMap<>();
             metricsTags.put("client-id", clientId);
             MetricConfig metricConfig = new MetricConfig().tags(metricsTags);
-            List<MetricsReporter> reporters = Collections.singletonList(new JmxReporter(JMX_PREFIX));
+            List<MetricsReporter> reporters = Collections.singletonList(new JmxReporter());
+            MetricsContext metricsContext = new KafkaMetricsContext(JMX_PREFIX, config.originals());
+
             Time time = Time.SYSTEM;
 
             ClientConfig clientConfig = new ClientConfig(config.originalsWithPrefix("kafkacache."), false);
 
-            this.metrics = new Metrics(metricConfig, reporters, time);
+            this.metrics = new Metrics(metricConfig, reporters, time, metricsContext);
             this.retryBackoffMs = clientConfig.getLong(CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG);
             String groupId = config.getString(KarelDbConfig.CLUSTER_GROUP_ID_CONFIG);
             LogContext logContext = new LogContext("[KarelDB clientId=" + clientId + ", groupId="
@@ -117,7 +121,10 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
             this.metadata.bootstrap(addresses);
             String metricGrpPrefix = "kareldb";
 
-            ChannelBuilder channelBuilder = ClientUtils.createChannelBuilder(clientConfig, time);
+            ChannelBuilder channelBuilder = ClientUtils.createChannelBuilder(
+                clientConfig,
+                time,
+                logContext);
             long maxIdleMs = clientConfig.getLong(CommonClientConfigs.CONNECTIONS_MAX_IDLE_MS_CONFIG);
 
             NetworkClient netClient = new NetworkClient(

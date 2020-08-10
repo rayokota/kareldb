@@ -36,6 +36,7 @@ import org.apache.avro.SchemaValidationException;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.sql.ddl.SqlAlterTableExtension;
 import org.apache.calcite.util.Pair;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -228,7 +229,10 @@ public class KafkaSchema extends Schema {
         @Override
         public void handleUpdate(KafkaSchemaKey schemaKey,
                                  KafkaSchemaValue schemaValue,
-                                 KafkaSchemaValue oldSchemaValue) {
+                                 KafkaSchemaValue oldSchemaValue,
+                                 TopicPartition tp,
+                                 long offset,
+                                 long timestamp) {
             String tableName = schemaKey.getTableName();
             org.apache.avro.Schema avroSchema;
             RelDef rowType;
