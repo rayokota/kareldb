@@ -18,6 +18,7 @@ package io.kareldb.jdbc.rules;
 
 import org.apache.calcite.adapter.enumerable.EnumerableConvention;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -45,9 +46,15 @@ public class EnumerableTableModifyExtensionRule extends ConverterRule {
      * @param relBuilderFactory Builder for relational expressions
      */
     public EnumerableTableModifyExtensionRule(RelBuilderFactory relBuilderFactory) {
-        super(LogicalTableModify.class, (Predicate<RelNode>) r -> true,
-            Convention.NONE, EnumerableConvention.INSTANCE, relBuilderFactory,
-            "EnumerableTableModificationExtensionRule");
+        super(Config.EMPTY
+            .withRelBuilderFactory(relBuilderFactory)
+            .as(Config.class)
+            .withConversion(
+                LogicalTableModify.class,
+                (Predicate<RelNode>) r -> true,
+                Convention.NONE,
+                EnumerableConvention.INSTANCE,
+                "EnumerableTableModificationExtensionRule"));
     }
 
     @Override
