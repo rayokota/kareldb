@@ -531,7 +531,7 @@ public final class DateTimeTest extends BaseJDBCTestCase {
     /**
      * Random tests for date.
      */
-    //@Test
+    @Test
     public void testRandom() throws SQLException {
         Statement st = createStatement();
 
@@ -560,7 +560,7 @@ public final class DateTimeTest extends BaseJDBCTestCase {
         JDBC.assertFullResultSet(rs, new String[][]{{"3245-09-09",
             "1001-06-07", "1999-01-05"}}, true);
 
-        assertUpdateCount(st, 2, " update sertest set d=s");
+        assertUpdateCount(st, 1, " update sertest set d=s");
 
         // should get type errors:
         assertStatementError("42821", st,
@@ -574,7 +574,19 @@ public final class DateTimeTest extends BaseJDBCTestCase {
             " insert into sertest values (null, null, "
                 + "timestamp'1745-01-01 09:30:25')");
 
-        assertUpdateCount(st, 2, "update sertest set d=o");
+        rs = st.executeQuery(" select * from sertest");
+        JDBC.assertColumnNames(rs, new String[]{"D", "S", "O"});
+        JDBC.assertFullResultSet(rs, new String[][]{{"1001-06-07",
+            "1001-06-07", "1999-01-05"}, {"1992-01-03",
+            "1992-01-03", "1992-01-03"}}, true);
+
+        assertUpdateCount(st, 1, "update sertest set d=o");
+
+        rs = st.executeQuery(" select * from sertest");
+        JDBC.assertColumnNames(rs, new String[]{"D", "S", "O"});
+        JDBC.assertFullResultSet(rs, new String[][]{{"1992-01-03",
+            "1992-01-03", "1992-01-03"}, {"1999-01-05",
+            "1001-06-07", "1999-01-05"}}, true);
 
         rs = st.executeQuery(" select * from sertest where s is null " +
             "and o is not null");
