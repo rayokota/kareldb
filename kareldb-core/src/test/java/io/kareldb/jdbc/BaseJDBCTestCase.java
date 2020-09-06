@@ -490,7 +490,8 @@ public abstract class BaseJDBCTestCase extends ClusterTestHarness {
             "org.apache.calcite.sql.ddl.ExtensionDdlExecutor#PARSER_FACTORY");
         properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
         properties.put("schema.kafkacache.bootstrap.servers", bootstrapServers);
-        properties.put("schema.rocksdb.enable", "true");
+        // TODO reenable RocksDB for tests
+        properties.put("schema.rocksdb.enable", "false");
         properties.put("schema.rocksdb.root.dir", tempDir.getAbsolutePath());
         return properties;
     }
