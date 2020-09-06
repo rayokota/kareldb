@@ -531,7 +531,7 @@ public final class DateTimeTest extends BaseJDBCTestCase {
     /**
      * Random tests for date.
      */
-    @Test
+    //@Test
     public void testRandom() throws SQLException {
         Statement st = createStatement();
 
