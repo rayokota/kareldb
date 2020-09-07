@@ -355,6 +355,7 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
         }
 
         private boolean update(Object o) {
+            // Handle UPDATE from EnumerableTableModifyExtension
             Pair<Comparable[], Comparable[]> keyValue = toKeyValue(o);
             Comparable[] oldKey = Arrays.copyOf(keyValue.left, keyValue.left.length);
             Comparable[] oldValue = Arrays.copyOf(keyValue.right, keyValue.right.length);
