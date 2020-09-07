@@ -378,12 +378,9 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
                     keyValue.right[inverseIndex - keySize] = (Comparable) colValue;
                 }
             }
-            boolean replaced = false;
-            if (!cache.keysEqual(oldKey, keyValue.left) || !cache.valuesEqual(oldValue, keyValue.right)) {
-                replaced = cache.replace(oldKey, oldValue, keyValue.left, keyValue.right);
-                if (replaced) {
-                    rowsAffected++;
-                }
+            boolean replaced = cache.replace(oldKey, oldValue, keyValue.left, keyValue.right);
+            if (replaced) {
+                rowsAffected++;
             }
             return replaced;
         }
