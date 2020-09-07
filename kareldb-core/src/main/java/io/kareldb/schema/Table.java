@@ -22,6 +22,8 @@ import io.kareldb.version.TxVersionedCache;
 import io.kareldb.version.VersionedCache;
 import io.kareldb.version.VersionedValue;
 import io.kcache.KeyValue;
+import io.kcache.KeyValueIterator;
+import io.kcache.KeyValueIterators;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
@@ -44,8 +46,10 @@ import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.apache.calcite.util.Pair;
 
 import java.io.Closeable;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,6 +63,9 @@ import java.util.TreeSet;
 public abstract class Table extends AbstractQueryableTable implements ModifiableTable, Closeable {
 
     public static final Comparable[] EMPTY_VALUE = new Comparable[0];
+
+    private static final KeyValue<Comparable[], VersionedValue> EMPTY_KEY_VALUE =
+        new KeyValue<>(null, null);
 
     private final Schema schema;
     private final String name;
@@ -249,7 +256,9 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
         return row;
     }
 
-    public static class ComparableArrayComparator implements Comparator<Comparable[]> {
+    public static class ComparableArrayComparator implements Comparator<Comparable[]>, Serializable {
+        private static final long serialVersionUID = 6469375761922827109L;
+
         // Avro only supports nulls first since the default must correspond to the
         // first schema in the union.
         private final Comparator<Comparable> defaultComparator =
@@ -306,7 +315,17 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
 
         @Override
         public Iterator iterator() {
-            return Iterators.transform(cache.all(), Table.this::toRow);
+            KeyValueIterator<Comparable[], VersionedValue> iter = cache.all();
+            return KeyValueIterators.flatMap(
+                KeyValueIterators.concat(iter,
+                    KeyValueIterators.singletonIterator(EMPTY_KEY_VALUE)),
+                keyValue -> {
+                    if (keyValue == EMPTY_KEY_VALUE) {
+                        iter.close();
+                        return Collections.emptyIterator();
+                    }
+                    return Iterators.singletonIterator(toRow(keyValue));
+                });
         }
 
         @Override
@@ -360,7 +379,7 @@ public abstract class Table extends AbstractQueryableTable implements Modifiable
                 }
             }
             boolean replaced = false;
-            if (!Arrays.equals(oldKey, keyValue.left) || !Arrays.equals(oldValue, keyValue.right)) {
+            if (!cache.keysEqual(oldKey, keyValue.left) || !cache.valuesEqual(oldValue, keyValue.right)) {
                 replaced = cache.replace(oldKey, oldValue, keyValue.left, keyValue.right);
                 if (replaced) {
                     rowsAffected++;

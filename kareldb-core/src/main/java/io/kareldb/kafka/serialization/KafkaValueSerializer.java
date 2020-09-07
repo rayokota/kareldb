@@ -99,7 +99,7 @@ public class KafkaValueSerializer implements Serializer<NavigableMap<Long, Versi
                     builder.set(field.e, versionedValue.isDeleted());
                 } else {
                     if (!versionedValue.isDeleted()) {
-                        Object v = AvroSchema.toAvroValue(field.e.schema(), value[field.i - 3]);
+                        Comparable v = AvroSchema.toAvroValue(field.e.schema(), value[field.i - 3]);
                         if (v != null) {
                             builder.set(field.e, v);
                         }
@@ -109,6 +109,16 @@ public class KafkaValueSerializer implements Serializer<NavigableMap<Long, Versi
             records.add(builder.build());
         }
         return records;
+    }
+
+    public Comparable[] toAvroValues(Comparable[] values) {
+        Schema recordSchema = avroSchema.getElementType();
+        List<Schema.Field> fields = recordSchema.getFields();
+        Comparable[] result = new Comparable[values.length];
+        for (int i = 0; i < values.length; i++) {
+            result[i] = AvroSchema.toAvroValue(fields.get(i + 3).schema(), values[i]);
+        }
+        return result;
     }
 
     @Override

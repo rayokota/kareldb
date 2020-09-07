@@ -32,7 +32,7 @@ import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
 import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.TransformedRawCache;
-import io.kcache.utils.rocksdb.RocksDBCache;
+import io.kcache.rocksdb.RocksDBCache;
 import org.apache.avro.Conversions;
 import org.apache.avro.JsonProperties;
 import org.apache.avro.Schema.Field;
@@ -83,7 +83,7 @@ public class KafkaTable extends FilterableTable {
             "version", schemaValue.getVersion()), false);
         Cache<Comparable[], NavigableMap<Long, VersionedValue>> transformedCache = new TransformedRawCache<>(
             keySerde, valueSerde, rows);
-        return new VersionedCache(getName(), transformedCache);
+        return new VersionedCache(getName(), transformedCache, keySerde, valueSerde);
     }
 
     @Override

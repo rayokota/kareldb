@@ -71,12 +71,22 @@ public class TxVersionedCache implements Closeable {
 
     @VisibleForTesting
     public int size() {
-        return Iterators.size(all());
+        try (KeyValueIterator<Comparable[], VersionedValue> iter = all()) {
+            return Iterators.size(iter);
+        }
     }
 
     @VisibleForTesting
     public boolean isEmpty() {
         return size() == 0;
+    }
+
+    public boolean keysEqual(Comparable[] key1, Comparable[] key2) {
+        return cache.keysEqual(key1, key2);
+    }
+
+    public boolean valuesEqual(Comparable[] value1, Comparable[] value2) {
+        return cache.valuesEqual(value1, value2);
     }
 
     public VersionedValue get(Comparable[] key) {
@@ -128,10 +138,10 @@ public class TxVersionedCache implements Closeable {
             // Ensure the value hasn't changed
             List<VersionedValue> oldValues = snapshotFilter.get(tx, oldKey);
             VersionedValue oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0) : null;
-            if (oldVersionedValue == null || !Arrays.equals(oldValue, oldVersionedValue.getValue())) {
+            if (oldVersionedValue == null || !cache.valuesEqual(oldValue, oldVersionedValue.getValue())) {
                 throw new IllegalStateException("Previous value has changed");
             }
-            if (Arrays.equals(oldKey, newKey)) {
+            if (cache.keysEqual(oldKey, newKey)) {
                 addWriteSetElement(tx, new KarelDbCellId(cache, newKey, tx.getWriteTimestamp()));
                 cache.put(newKey, tx.getWriteTimestamp(), newValue);
                 return true;

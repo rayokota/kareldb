@@ -19,9 +19,11 @@ package io.kareldb.avro;
 import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryData;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
-public class AvroKeyComparator implements Comparator<byte[]> {
+public class AvroKeyComparator implements Comparator<byte[]>, Serializable {
+    private static final long serialVersionUID = -6393807366276536251L;
 
     private final Schema schema;
 

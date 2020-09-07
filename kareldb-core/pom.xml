@@ -52,6 +52,18 @@ limitations under the License.
             <artifactId>kcache</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.kcache</groupId>
+            <artifactId>kcache-bdbje</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.kcache</groupId>
+            <artifactId>kcache-lmdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.kcache</groupId>
+            <artifactId>kcache-rocksdb</artifactId>
+        </dependency>
+        <dependency>
             <groupId>net.sf.opencsv</groupId>
             <artifactId>opencsv</artifactId>
         </dependency>

@@ -18,6 +18,9 @@
 package io.kareldb.version;
 
 import io.kareldb.KarelDbEngine;
+import io.kareldb.kafka.serialization.KafkaKeySerde;
+import io.kareldb.kafka.serialization.KafkaValueSerde;
+import io.kareldb.kafka.serialization.KafkaValueSerializer;
 import io.kareldb.schema.Table;
 import io.kareldb.transaction.client.KarelDbTransactionManager;
 import io.kcache.Cache;
@@ -25,6 +28,7 @@ import io.kcache.KeyValue;
 import io.kcache.KeyValueIterator;
 import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.Streams;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.omid.transaction.TransactionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -49,18 +54,43 @@ public class VersionedCache implements Closeable {
 
     private final String name;
     private final Cache<Comparable[], NavigableMap<Long, VersionedValue>> cache;
+    private final KafkaKeySerde keySerde;
+    private final KafkaValueSerde valueSerde;
 
     public VersionedCache(String name) {
-        this(name, new InMemoryCache<>(new Table.ComparableArrayComparator()));
+        this(name, new InMemoryCache<>(new Table.ComparableArrayComparator()), null, null);
     }
 
-    public VersionedCache(String name, Cache<Comparable[], NavigableMap<Long, VersionedValue>> cache) {
+    public VersionedCache(String name,
+                          Cache<Comparable[], NavigableMap<Long, VersionedValue>> cache,
+                          KafkaKeySerde keySerde,
+                          KafkaValueSerde valueSerde) {
         this.name = name;
         this.cache = cache;
+        this.keySerde = keySerde;
+        this.valueSerde = valueSerde;
     }
 
     public String getName() {
         return name;
+    }
+
+    public boolean keysEqual(Comparable[] key1, Comparable[] key2) {
+        if (keySerde != null) {
+            Serializer<Comparable[]> serializer = keySerde.serializer();
+            return Arrays.equals(serializer.serialize(null, key1), serializer.serialize(null, key2));
+        } else {
+            return Arrays.equals(key1, key2);
+        }
+    }
+
+    public boolean valuesEqual(Comparable[] value1, Comparable[] value2) {
+        if (valueSerde != null) {
+            KafkaValueSerializer serializer = (KafkaValueSerializer) valueSerde.serializer();
+            return Arrays.equals(serializer.toAvroValues(value1), serializer.toAvroValues(value2));
+        } else {
+            return Arrays.equals(value1, value2);
+        }
     }
 
     public VersionedValue get(Comparable[] key, long version) {
@@ -130,7 +160,7 @@ public class VersionedCache implements Closeable {
     }
 
     public VersionedCache subCache(Comparable[] from, boolean fromInclusive, Comparable[] to, boolean toInclusive) {
-        return new VersionedCache(name, cache.subCache(from, fromInclusive, to, toInclusive));
+        return new VersionedCache(name, cache.subCache(from, fromInclusive, to, toInclusive), keySerde, valueSerde);
     }
 
     public KeyValueIterator<Comparable[], List<VersionedValue>> range(
