@@ -29,6 +29,7 @@ import io.kcache.Cache;
 import io.kcache.CacheUpdateHandler;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
+import io.kcache.KeyValueIterator;
 import io.kcache.utils.Caches;
 import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.Streams;
@@ -115,25 +116,31 @@ public class KafkaSchema extends Schema {
         KafkaSchemaKey key1 = new KafkaSchemaKey(name, MIN_VERSION);
         KafkaSchemaKey key2 = new KafkaSchemaKey(name, MAX_VERSION);
         // Get all schemas with the same epoch in descending order
-        List<KafkaSchemaValue> schemas = Streams.streamOf(schemaMap.descendingCache().range(key2, false, key1, true))
-            .map(kv -> kv.value)
-            .collect(Collectors.toList());
-        if (schemas.isEmpty()) {
-            return schemas;
+        try (KeyValueIterator<KafkaSchemaKey, KafkaSchemaValue> iter =
+                 schemaMap.descendingCache().range(key2, false, key1, true)) {
+            List<KafkaSchemaValue> schemas = Streams.streamOf(iter)
+                .map(kv -> kv.value)
+                .collect(Collectors.toList());
+            if (schemas.isEmpty()) {
+                return schemas;
+            }
+            int epoch = schemas.get(0).getEpoch();
+            return schemas.stream()
+                .filter(s -> s.getEpoch() == epoch)
+                .collect(Collectors.toList());
         }
-        int epoch = schemas.get(0).getEpoch();
-        return schemas.stream()
-            .filter(s -> s.getEpoch() == epoch)
-            .collect(Collectors.toList());
     }
 
     public KafkaSchemaValue getLatestSchemaValue(String name) {
         KafkaSchemaKey key1 = new KafkaSchemaKey(name, MIN_VERSION);
         KafkaSchemaKey key2 = new KafkaSchemaKey(name, MAX_VERSION);
-        return Streams.streamOf(schemaMap.range(key1, true, key2, false))
-            .reduce((e1, e2) -> e2)
-            .map(kv -> kv.value)
-            .orElse(null);
+        try (KeyValueIterator<KafkaSchemaKey, KafkaSchemaValue> iter =
+                 schemaMap.range(key1, true, key2, false)) {
+            return Streams.streamOf(iter)
+                .reduce((e1, e2) -> e2)
+                .map(kv -> kv.value)
+                .orElse(null);
+        }
     }
 
     @Override
