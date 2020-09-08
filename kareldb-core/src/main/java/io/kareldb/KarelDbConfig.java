@@ -45,16 +45,6 @@ public class KarelDbConfig extends KafkaCacheConfig {
         "If true, this node can participate in leader election. In a multi-colo setup, turn this off "
             + "for clusters in the replica data center.";
 
-    public static final String ROCKS_DB_ENABLE_CONFIG = "rocksdb.enable";
-    public static final boolean ROCKS_DB_ENABLE_DEFAULT = true;
-    public static final String ROCKS_DB_ENABLE_DOC =
-        "Whether to enable RocksDB within KCache.";
-
-    public static final String ROCKS_DB_ROOT_DIR_CONFIG = "rocksdb.root.dir";
-    public static final String ROCKS_DB_ROOT_DIR_DEFAULT = "/tmp";
-    public static final String ROCKS_DB_ROOT_DIR_DOC =
-        "Root directory for RocksDB storage.";
-
     public static final String SSL_KEYSTORE_LOCATION_CONFIG = "ssl.keystore.location";
     public static final String SSL_KEYSTORE_LOCATION_DOC =
         "Location of the keystore file to use for SSL. This is required for HTTPS.";
@@ -192,18 +182,6 @@ public class KarelDbConfig extends KafkaCacheConfig {
                 LEADER_ELIGIBILITY_DEFAULT,
                 Importance.MEDIUM,
                 LEADER_ELIGIBILITY_DOC
-            ).define(
-                ROCKS_DB_ENABLE_CONFIG,
-                Type.BOOLEAN,
-                ROCKS_DB_ENABLE_DEFAULT,
-                Importance.MEDIUM,
-                ROCKS_DB_ENABLE_DOC
-            ).define(
-                ROCKS_DB_ROOT_DIR_CONFIG,
-                Type.STRING,
-                ROCKS_DB_ROOT_DIR_DEFAULT,
-                Importance.MEDIUM,
-                ROCKS_DB_ROOT_DIR_DOC
             ).define(
                 SSL_KEYSTORE_LOCATION_CONFIG,
                 Type.STRING,

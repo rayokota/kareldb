@@ -101,16 +101,9 @@ public class KafkaTable extends FilterableTable {
         configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
         configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
         configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-        String enableRocksDbStr = (String) configs.getOrDefault(KarelDbConfig.ROCKS_DB_ENABLE_CONFIG, "true");
-        boolean enableRocksDb = Boolean.parseBoolean(enableRocksDbStr);
-        String rootDir = (String) configs.getOrDefault(
-            KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, KarelDbConfig.ROCKS_DB_ROOT_DIR_DEFAULT);
         Comparator<byte[]> cmp = new AvroKeyComparator(schemas.left);
-        Cache<byte[], byte[]> cache = enableRocksDb
-            ? new RocksDBCache<>(topic, "rocksdb", rootDir, Serdes.ByteArray(), Serdes.ByteArray(), cmp)
-            : new InMemoryCache<>(cmp);
         this.rows = new KafkaCache<>(
-            new KafkaCacheConfig(configs), Serdes.ByteArray(), Serdes.ByteArray(), null, cache);
+            new KafkaCacheConfig(configs), Serdes.ByteArray(), Serdes.ByteArray(), null, topic, cmp);
     }
 
     @Override

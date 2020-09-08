@@ -70,7 +70,7 @@ properties.put("schemaFactory", "io.kareldb.schema.SchemaFactory");
 properties.put("parserFactory", "org.apache.calcite.sql.parser.parserextension.ExtensionSqlParserImpl#FACTORY");
 properties.put("schema.kind", "io.kareldb.kafka.KafkaSchema");
 properties.put("schema.kafkacache.bootstrap.servers", bootstrapServers);
-properties.put("schema.rocksdb.root.dir", "/tmp");
+properties.put("schema.kafkacache.data.dir", "/tmp");
 
 try (Connection conn = DriverManager.getConnection("jdbc:kareldb:", properties);
      Statement s = conn.createStatement()) {
@@ -125,8 +125,9 @@ KarelDB has a number of configuration properties that can be specified.  When us
 - `listeners` - List of listener URLs that include the scheme, host, and port.  Defaults to `http://0.0.0.0:8765`.  
 - `cluster.group.id` - The group ID to be used for leader election.  Defaults to `kareldb`.
 - `leader.eligibility` - Whether this node can participate in leader election.  Defaults to true.
-- `rocksdb.enable` - Whether to use RocksDB in KCache.  Defaults to true.  Otherwise an in-memory cache is used.
-- `rocksdb.root.dir` - The root directory for RocksDB storage.  Defaults to `/tmp`.
+- `kafkacache.backing.cache` - The backing cache for KCache, one of `memory` (default
+), `bdbje`, `lmdb`, or `rocksdb`.
+- `kafkacache.data.dir` - The root directory for backing cache storage.  Defaults to `/tmp`.
 - `kafkacache.bootstrap.servers` - A list of host and port pairs to use for establishing the initial connection to Kafka.
 - `kafkacache.group.id` - The group ID to use for the internal consumers, which needs to be unique for each node.  Defaults to `kareldb-1`.
 - `kafkacache.topic.replication.factor` - The replication factor for the internal topics created by KarelDB.  Defaults to 3.

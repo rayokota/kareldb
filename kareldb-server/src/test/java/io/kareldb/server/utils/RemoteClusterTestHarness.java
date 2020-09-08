@@ -90,7 +90,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     protected void injectKarelDbProperties(Properties props) {
         props.put(KarelDbConfig.LISTENERS_CONFIG, "http://0.0.0.0:" + serverPort);
         props.put(KarelDbConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, tempDir.getAbsolutePath());
+        props.put(KarelDbConfig.KAFKACACHE_DATA_DIR_CONFIG, tempDir.getAbsolutePath());
     }
 
     /**
