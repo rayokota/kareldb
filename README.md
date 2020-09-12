@@ -21,7 +21,7 @@ Releases of KarelDB are deployed to Maven Central.
 <dependency>
     <groupId>io.kareldb</groupId>
     <artifactId>kareldb-core</artifactId>
-    <version>0.1.8</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
@@ -37,7 +37,7 @@ At a separate terminal, enter the following command to start up `sqlline`, a com
 
 ```
 $ bin/sqlline
-sqlline version 1.8.0
+sqlline version 1.9.0
 
 sqlline> !connect jdbc:avatica:remote:url=http://localhost:8765 admin admin
 
