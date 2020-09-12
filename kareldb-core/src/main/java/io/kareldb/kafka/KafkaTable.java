@@ -17,7 +17,6 @@
 package io.kareldb.kafka;
 
 import com.google.common.collect.ImmutableMap;
-import io.kareldb.KarelDbConfig;
 import io.kareldb.avro.AvroKeyComparator;
 import io.kareldb.avro.AvroUtils;
 import io.kareldb.kafka.serialization.KafkaKeySerde;
@@ -30,8 +29,6 @@ import io.kareldb.version.VersionedValue;
 import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
-import io.kcache.rocksdb.RocksDBCache;
-import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.TransformedRawCache;
 import org.apache.avro.Conversions;
 import org.apache.avro.JsonProperties;
