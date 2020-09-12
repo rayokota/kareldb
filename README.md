@@ -125,8 +125,7 @@ KarelDB has a number of configuration properties that can be specified.  When us
 - `listeners` - List of listener URLs that include the scheme, host, and port.  Defaults to `http://0.0.0.0:8765`.  
 - `cluster.group.id` - The group ID to be used for leader election.  Defaults to `kareldb`.
 - `leader.eligibility` - Whether this node can participate in leader election.  Defaults to true.
-- `kafkacache.backing.cache` - The backing cache for KCache, one of `memory` (default
-), `bdbje`, `lmdb`, or `rocksdb`.
+- `kafkacache.backing.cache` - The backing cache for KCache, one of `memory` (default), `bdbje`, `lmdb`, `mapdb`, or `rocksdb`.
 - `kafkacache.data.dir` - The root directory for backing cache storage.  Defaults to `/tmp`.
 - `kafkacache.bootstrap.servers` - A list of host and port pairs to use for establishing the initial connection to Kafka.
 - `kafkacache.group.id` - The group ID to use for the internal consumers, which needs to be unique for each node.  Defaults to `kareldb-1`.
