@@ -17,7 +17,6 @@
 package io.kareldb.kafka;
 
 import com.google.common.collect.ImmutableMap;
-import io.kareldb.KarelDbConfig;
 import io.kareldb.avro.AvroKeyComparator;
 import io.kareldb.avro.AvroUtils;
 import io.kareldb.kafka.serialization.KafkaKeySerde;
@@ -30,8 +29,6 @@ import io.kareldb.version.VersionedValue;
 import io.kcache.Cache;
 import io.kcache.KafkaCache;
 import io.kcache.KafkaCacheConfig;
-import io.kcache.rocksdb.RocksDBCache;
-import io.kcache.utils.InMemoryCache;
 import io.kcache.utils.TransformedRawCache;
 import org.apache.avro.Conversions;
 import org.apache.avro.JsonProperties;
@@ -101,16 +98,9 @@ public class KafkaTable extends FilterableTable {
         configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
         configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
         configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-        String enableRocksDbStr = (String) configs.getOrDefault(KarelDbConfig.ROCKS_DB_ENABLE_CONFIG, "true");
-        boolean enableRocksDb = Boolean.parseBoolean(enableRocksDbStr);
-        String rootDir = (String) configs.getOrDefault(
-            KarelDbConfig.ROCKS_DB_ROOT_DIR_CONFIG, KarelDbConfig.ROCKS_DB_ROOT_DIR_DEFAULT);
         Comparator<byte[]> cmp = new AvroKeyComparator(schemas.left);
-        Cache<byte[], byte[]> cache = enableRocksDb
-            ? new RocksDBCache<>(topic, "rocksdb", rootDir, Serdes.ByteArray(), Serdes.ByteArray(), cmp)
-            : new InMemoryCache<>(cmp);
         this.rows = new KafkaCache<>(
-            new KafkaCacheConfig(configs), Serdes.ByteArray(), Serdes.ByteArray(), null, cache);
+            new KafkaCacheConfig(configs), Serdes.ByteArray(), Serdes.ByteArray(), null, topic, cmp);
     }
 
     @Override

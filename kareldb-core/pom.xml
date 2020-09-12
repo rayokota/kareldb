@@ -61,6 +61,10 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>io.kcache</groupId>
+            <artifactId>kcache-mapdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.kcache</groupId>
             <artifactId>kcache-rocksdb</artifactId>
         </dependency>
         <dependency>

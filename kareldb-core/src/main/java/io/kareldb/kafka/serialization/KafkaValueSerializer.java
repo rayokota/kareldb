@@ -99,7 +99,7 @@ public class KafkaValueSerializer implements Serializer<NavigableMap<Long, Versi
                     builder.set(field.e, versionedValue.isDeleted());
                 } else {
                     if (!versionedValue.isDeleted()) {
-                        Comparable v = AvroSchema.toAvroValue(field.e.schema(), value[field.i - 3]);
+                        Object v = AvroSchema.toAvroValue(field.e.schema(), value[field.i - 3]);
                         if (v != null) {
                             builder.set(field.e, v);
                         }
