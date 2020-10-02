@@ -64,7 +64,7 @@ limitations under the License.
              19.0 and 27.1. Default is 19.0 due to Cassandra adapter. -->
         <guava.version>19.0</guava.version>
         <hamcrest.version>2.2</hamcrest.version>
-        <jackson.version>2.11.1</jackson.version>
+        <jackson.version>2.11.3</jackson.version>
         <javacc-maven-plugin.version>2.6</javacc-maven-plugin.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
         <junit.version>4.12</junit.version>
