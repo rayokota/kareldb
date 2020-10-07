@@ -57,7 +57,7 @@ limitations under the License.
         <avatica.version>1.17.0</avatica.version>
         <avro.version>1.10.0</avro.version>
         <bouncycastle.version>1.66</bouncycastle.version>
-        <calcite.version>1.25.0</calcite.version>
+        <calcite.version>1.26.0</calcite.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <findbugs.version>3.0.2</findbugs.version>
         <!-- We support (and test against) Guava versions between
