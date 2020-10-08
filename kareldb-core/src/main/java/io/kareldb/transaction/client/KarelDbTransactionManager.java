@@ -59,6 +59,8 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
+    public static KarelDbTransactionManager INSTANCE;
+
     // ----------------------------------------------------------------------------------------------------------------
     // Construction
     // ----------------------------------------------------------------------------------------------------------------
@@ -82,29 +84,6 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
     }
 
     public static KarelDbTransactionManager newInstance(CommitTable commitTable,
-                                                        TimestampStorage timestampStorage,
-                                                        PostCommitActions postCommitter) {
-        try {
-            MetricsRegistry metricsRegistry = new NullMetricsProvider();
-            CommitTable.Client commitTableClient = commitTable.getClient();
-            CommitTable.Writer commitTableWriter = commitTable.getWriter();
-            TimestampOracle timestampOracle = new TimestampOracleImpl(
-                metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
-            timestampOracle.initialize();
-            TSOProtocol tsoClient = new KarelDbTimestampClient(timestampOracle, commitTableWriter);
-
-            return new KarelDbTransactionManager(metricsRegistry,
-                postCommitter,
-                tsoClient,
-                commitTableClient,
-                commitTableWriter,
-                new KarelDbTransactionFactory());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static KarelDbTransactionManager newInstance(CommitTable commitTable,
                                                         TimestampOracle timestampOracle,
                                                         PostCommitActions postCommitter) {
         try {
@@ -113,12 +92,13 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
             CommitTable.Writer commitTableWriter = commitTable.getWriter();
             TSOProtocol tsoClient = new KarelDbTimestampClient(timestampOracle, commitTableWriter);
 
-            return new KarelDbTransactionManager(metricsRegistry,
+            INSTANCE = new KarelDbTransactionManager(metricsRegistry,
                 postCommitter,
                 tsoClient,
                 commitTableClient,
                 commitTableWriter,
                 new KarelDbTransactionFactory());
+            return INSTANCE;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
