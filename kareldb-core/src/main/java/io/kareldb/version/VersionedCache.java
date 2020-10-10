@@ -144,7 +144,7 @@ public class VersionedCache implements Closeable {
     private void garbageCollect(NavigableMap<Long, VersionedValue> rowData) {
         // Discard all entries strictly older than the low water mark except the most recent
         try {
-            KarelDbTransactionManager txManager = KarelDbTransactionManager.INSTANCE;
+            KarelDbTransactionManager txManager = KarelDbTransactionManager.getInstance();
             if (txManager != null) {  // allow null for tests
                 long lowWaterMark = txManager.getLowWatermark();
                 List<Long> oldVersions = new ArrayList<>(rowData.headMap(lowWaterMark).keySet());

@@ -59,7 +59,11 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
-    public static KarelDbTransactionManager INSTANCE;
+    private static KarelDbTransactionManager INSTANCE;
+
+    public static KarelDbTransactionManager getInstance() {
+        return INSTANCE;
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Construction
