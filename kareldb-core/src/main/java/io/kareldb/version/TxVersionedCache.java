@@ -82,17 +82,11 @@ public class TxVersionedCache implements Closeable {
     }
 
     public VersionedValue get(Comparable[] key) {
-        List<VersionedValue> values = getAll(key);
-        return values.size() > 0 ? values.get(0) : null;
-    }
-
-    public List<VersionedValue> getAll(Comparable[] key) {
         Lock lock = striped.get(Arrays.asList(key)).readLock();
         lock.lock();
         try {
-            KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
-            List<VersionedValue> values = snapshotFilter.get(tx, key);
-            return values;
+            List<VersionedValue> values = getVersions(key);
+            return values.size() > 0 ? values.get(0) : null;
         } finally {
             lock.unlock();
         }
@@ -103,7 +97,7 @@ public class TxVersionedCache implements Closeable {
         lock.lock();
         try {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
-            List<VersionedValue> values = snapshotFilter.get(tx, key);
+            List<VersionedValue> values = getVersions(key);
             if (values.size() > 0) {
                 throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(key));
             }
@@ -128,7 +122,7 @@ public class TxVersionedCache implements Closeable {
         try {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
             // Ensure the value hasn't changed
-            List<VersionedValue> oldValues = snapshotFilter.get(tx, oldKey);
+            List<VersionedValue> oldValues = getVersions(oldKey);
             VersionedValue oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0) : null;
             if (oldVersionedValue == null || !Arrays.equals(oldValue, oldVersionedValue.getValue())) {
                 throw new IllegalStateException("Previous value has changed");
@@ -142,7 +136,7 @@ public class TxVersionedCache implements Closeable {
                     return true;
                 }
             } else {
-                List<VersionedValue> newValues = snapshotFilter.get(tx, newKey);
+                List<VersionedValue> newValues = getVersions(newKey);
                 if (newValues.size() > 0) {
                     throw new IllegalStateException("Primary key constraint violation: " + Arrays.toString(newKey));
                 }
@@ -171,6 +165,13 @@ public class TxVersionedCache implements Closeable {
 
     public TxVersionedCache subCache(Comparable[] from, boolean fromInclusive, Comparable[] to, boolean toInclusive) {
         return new TxVersionedCache(cache.subCache(from, fromInclusive, to, toInclusive));
+    }
+
+    public List<VersionedValue> getVersions(Comparable[] key) {
+        KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
+        return snapshotFilter.get(tx, key).stream()
+            .filter(value -> !value.isDeleted())
+            .collect(Collectors.toList());
     }
 
     public KeyValueIterator<Comparable[], VersionedValue> range(

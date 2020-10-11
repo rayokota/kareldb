@@ -102,7 +102,7 @@ public class CheckpointTest {
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
-        List<VersionedValue> values = versionedCache.getAll(rowId1);
+        List<VersionedValue> values = versionedCache.getVersions(rowId1);
         assertEquals("Expected 3 results and found " + values.size(), 3, values.size());
 
         assertArrayEquals(dataValue3, values.get(0).getValue());
@@ -174,7 +174,7 @@ public class CheckpointTest {
 
         kdbTx1.setVisibilityLevel(VisibilityLevel.SNAPSHOT_ALL);
 
-        List<VersionedValue> values = versionedCache.getAll(rowId1);
+        List<VersionedValue> values = versionedCache.getVersions(rowId1);
         assertEquals("Expected 3 results and found " + values.size(), 3, values.size());
 
         assertArrayEquals(dataValue2, values.get(0).getValue());
