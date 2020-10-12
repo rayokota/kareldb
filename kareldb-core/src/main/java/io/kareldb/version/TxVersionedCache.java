@@ -123,8 +123,8 @@ public class TxVersionedCache implements Closeable {
             KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
             // Ensure the value hasn't changed
             List<VersionedValue> oldValues = getVersions(oldKey);
-            VersionedValue oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0) : null;
-            if (oldVersionedValue == null || !Arrays.equals(oldValue, oldVersionedValue.getValue())) {
+            Comparable[] oldVersionedValue = oldValues.size() > 0 ? oldValues.get(0).getValue() : null;
+            if (!(oldValue == null && oldVersionedValue == null) && !Arrays.equals(oldValue, oldVersionedValue)) {
                 throw new IllegalStateException("Previous value has changed");
             }
             if (cache.keysEqual(oldKey, newKey)) {
