@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -169,9 +170,18 @@ public class TxVersionedCache implements Closeable {
 
     public List<VersionedValue> getVersions(Comparable[] key) {
         KarelDbTransaction tx = KarelDbTransaction.currentTransaction();
-        return snapshotFilter.get(tx, key).stream()
-            .filter(value -> !value.isDeleted())
-            .collect(Collectors.toList());
+        return filterDeleted(snapshotFilter.get(tx, key));
+    }
+
+    private static List<VersionedValue> filterDeleted(List<VersionedValue> values) {
+        List<VersionedValue> filtered = new ArrayList<>(values.size());
+        for (VersionedValue value : values) {
+            if (value.isDeleted()) {
+                break;
+            }
+            filtered.add(value);
+        }
+        return filtered;
     }
 
     public KeyValueIterator<Comparable[], VersionedValue> range(
@@ -209,8 +219,7 @@ public class TxVersionedCache implements Closeable {
             KeyValueIterator<Comparable[], List<VersionedValue>> iter) {
             this.rawIterator = iter;
             this.iterator = Streams.<KeyValue<Comparable[], List<VersionedValue>>>streamOf(iter)
-                .flatMap(kv -> kv.value.stream().map(value -> new KeyValue<>(kv.key, value)))
-                .filter(kv -> !kv.value.isDeleted())
+                .flatMap(kv -> filterDeleted(kv.value).stream().map(value -> new KeyValue<>(kv.key, value)))
                 .iterator();
         }
 
