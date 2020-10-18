@@ -61,7 +61,7 @@ public class KarelDbMain {
             KarelDbLeaderElector elector = new KarelDbLeaderElector(config, engine);
             elector.init();
             boolean isLeader = elector.isLeader();
-            LOG.info("Leader elected, starting server...");
+            LOG.info("Leader: {}, starting server...", isLeader);
             HttpServer server = start(config, elector);
             LOG.info("Server started, listening for requests...");
             LOG.info("KarelDB is at your service...");
