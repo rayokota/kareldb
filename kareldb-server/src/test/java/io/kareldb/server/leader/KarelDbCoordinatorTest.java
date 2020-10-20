@@ -163,6 +163,7 @@ public class KarelDbCoordinatorTest {
             KarelDbProtocol.Assignment.NO_ERROR,
             consumerId,
             LEADER_INFO,
+            Collections.emptyList(),
             Errors.NONE
         );
         client.prepareResponse(new MockClient.RequestMatcher() {
@@ -200,6 +201,7 @@ public class KarelDbCoordinatorTest {
             KarelDbProtocol.Assignment.NO_ERROR,
             null,
             null,
+            Collections.emptyList(),
             Errors.NONE
         );
         client.prepareResponse(new MockClient.RequestMatcher() {
@@ -239,6 +241,7 @@ public class KarelDbCoordinatorTest {
             KarelDbProtocol.Assignment.DUPLICATE_URLS,
             null,
             null,
+            Collections.emptyList(),
             Errors.NONE
         );
         client.prepareResponse(new MockClient.RequestMatcher() {
@@ -274,6 +277,7 @@ public class KarelDbCoordinatorTest {
             KarelDbProtocol.Assignment.NO_ERROR,
             LEADER_ID,
             LEADER_INFO,
+            Collections.emptyList(),
             Errors.NONE
         );
         client.prepareResponse(new MockClient.RequestMatcher() {
@@ -342,10 +346,11 @@ public class KarelDbCoordinatorTest {
         short assignmentError,
         String leader,
         KarelDbIdentity leaderIdentity,
+        List<KarelDbIdentity> members,
         Errors error
     ) {
         KarelDbProtocol.Assignment assignment = new KarelDbProtocol.Assignment(
-            assignmentError, leader, leaderIdentity
+            assignmentError, leader, leaderIdentity, members
         );
         ByteBuffer buf = KarelDbProtocol.serializeAssignment(assignment);
         return new SyncGroupResponse(new SyncGroupResponseData()

@@ -17,11 +17,13 @@
 
 package io.kareldb.server.leader;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * This class implements the protocol for members in a Kafka group. It includes
@@ -45,6 +47,7 @@ class KarelDbProtocol {
         return Assignment.fromJson(buffer);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Assignment {
         public static final int CURRENT_VERSION = 1;
 
@@ -58,14 +61,17 @@ class KarelDbProtocol {
         private final short error;
         private final String leader;
         private final KarelDbIdentity leaderIdentity;
+        private final List<KarelDbIdentity> members;
 
         public Assignment(@JsonProperty("error") short error,
                           @JsonProperty("leader") String leader,
-                          @JsonProperty("leader_identity") KarelDbIdentity leaderIdentity) {
+                          @JsonProperty("leader_identity") KarelDbIdentity leaderIdentity,
+                          @JsonProperty("members") List<KarelDbIdentity> members) {
             this.version = CURRENT_VERSION;
             this.error = error;
             this.leader = leader;
             this.leaderIdentity = leaderIdentity;
+            this.members = members;
         }
 
         public static Assignment fromJson(ByteBuffer json) {
@@ -98,6 +104,11 @@ class KarelDbProtocol {
             return leaderIdentity;
         }
 
+        @JsonProperty("members")
+        public List<KarelDbIdentity> members() {
+            return members;
+        }
+
         public boolean failed() {
             return error != NO_ERROR;
         }
@@ -117,6 +128,7 @@ class KarelDbProtocol {
                 + ", error=" + error
                 + ", leader='" + leader + '\''
                 + ", leaderIdentity=" + leaderIdentity
+                + ", members=" + members
                 + '}';
         }
     }

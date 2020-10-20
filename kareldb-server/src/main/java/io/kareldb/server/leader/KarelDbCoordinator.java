@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,11 +155,13 @@ final class KarelDbCoordinator extends AbstractCoordinator implements Closeable 
     ) {
         LOG.debug("Performing assignment");
 
+        List<KarelDbIdentity> members = new ArrayList<>();
         Map<String, KarelDbIdentity> memberConfigs = new HashMap<>();
         for (JoinGroupResponseData.JoinGroupResponseMember entry : allMemberMetadata) {
             KarelDbIdentity identity
                 = KarelDbProtocol.deserializeMetadata(ByteBuffer.wrap(entry.metadata()));
             memberConfigs.put(entry.memberId(), identity);
+            members.add(identity);
         }
 
         LOG.debug("Member information: {}", memberConfigs);
@@ -195,7 +198,7 @@ final class KarelDbCoordinator extends AbstractCoordinator implements Closeable 
         // All members currently receive the same assignment information since it is just the leader ID
         Map<String, ByteBuffer> groupAssignment = new HashMap<>();
         KarelDbProtocol.Assignment assignment
-            = new KarelDbProtocol.Assignment(error, leaderKafkaId, leaderIdentity);
+            = new KarelDbProtocol.Assignment(error, leaderKafkaId, leaderIdentity, members);
         LOG.debug("Assignment: {}", assignment);
         for (String member : memberConfigs.keySet()) {
             groupAssignment.put(member, KarelDbProtocol.serializeAssignment(assignment));
