@@ -77,6 +77,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final Metadata metadata;
     private final long retryBackoffMs;
     private final KarelDbCoordinator coordinator;
+    private final List<URI> listeners;
     private KarelDbIdentity myIdentity;
     private final AtomicReference<KarelDbIdentity> leader = new AtomicReference<>();
 
@@ -89,8 +90,10 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
             this.engine = engine;
             this.clientId = "kdb-" + KDB_CLIENT_ID_SEQUENCE.getAndIncrement();
 
+            this.listeners = parseListeners(config.getList(KarelDbConfig.LISTENERS_CONFIG));
             this.myIdentity = findIdentity(
-                config.getList(KarelDbConfig.LISTENERS_CONFIG),
+                listeners,
+                config.getString(KarelDbConfig.HOST_NAME_CONFIG),
                 config.getBoolean(KarelDbConfig.LEADER_ELIGIBILITY_CONFIG));
 
             Map<String, String> metricsTags = new LinkedHashMap<>();
@@ -181,10 +184,9 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         }
     }
 
-    static KarelDbIdentity findIdentity(List<String> configuredListeners, boolean leaderEligibility) {
-        List<URI> listeners = parseListeners(configuredListeners);
+    static KarelDbIdentity findIdentity(List<URI> listeners, String host, boolean leaderEligibility) {
         for (URI listener : listeners) {
-            return new KarelDbIdentity(listener.getScheme(), listener.getHost(), listener.getPort(), leaderEligibility);
+            return new KarelDbIdentity(listener.getScheme(), host, listener.getPort(), leaderEligibility);
         }
         throw new ConfigException("No listeners are configured. Must have at least one listener.");
     }
@@ -326,6 +328,10 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
 
     public KarelDbIdentity getIdentity() {
         return myIdentity;
+    }
+
+    public List<URI> getListeners() {
+        return listeners;
     }
 
     public boolean isLeader() {

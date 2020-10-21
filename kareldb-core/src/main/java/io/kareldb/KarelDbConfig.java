@@ -20,13 +20,21 @@ import io.kcache.KafkaCacheConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.ConfigException;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class KarelDbConfig extends KafkaCacheConfig {
+
+    public static final String HOST_NAME_CONFIG = "host.name";
+    public static final String HOST_NAME_DOC =
+        "The host name used in leader election. Make sure to set this if running with multiple "
+            + "nodes.";
 
     public static final String LISTENERS_CONFIG = "listeners";
     public static final String LISTENERS_DEFAULT = "http://0.0.0.0:8765";
@@ -165,6 +173,12 @@ public class KarelDbConfig extends KafkaCacheConfig {
     static {
         config = baseConfigDef()
             .define(
+                HOST_NAME_CONFIG,
+                Type.STRING,
+                getDefaultHost(),
+                Importance.HIGH,
+                HOST_NAME_DOC
+            ).define(
                 LISTENERS_CONFIG,
                 Type.LIST,
                 LISTENERS_DEFAULT,
@@ -301,5 +315,13 @@ public class KarelDbConfig extends KafkaCacheConfig {
 
     public KarelDbConfig(Map<?, ?> props) {
         super(config, props);
+    }
+
+    private static String getDefaultHost() {
+        try {
+            return InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException e) {
+            throw new ConfigException("Unknown local hostname", e);
+        }
     }
 }
