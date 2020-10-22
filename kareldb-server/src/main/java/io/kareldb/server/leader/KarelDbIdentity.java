@@ -25,8 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * The identity of a group member. The leader will store the json representation of its
- * identity in Zookeeper.
+ * The identity of a group member.
  */
 public class KarelDbIdentity {
 
