@@ -70,7 +70,7 @@ limitations under the License.
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.version>2.6.0</kafka.version>
-        <kcache.version>3.3.2</kcache.version>
+        <kcache.version>3.3.3</kcache.version>
         <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
         <maven-scm-provider.version>1.10.0</maven-scm-provider.version>
