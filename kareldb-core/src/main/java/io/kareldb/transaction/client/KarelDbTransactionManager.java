@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 import io.kareldb.transaction.InMemoryCommitTable;
 import io.kareldb.transaction.InMemoryTimestampStorage;
 import io.kareldb.transaction.KarelDbTimestampClient;
+import io.kareldb.transaction.KarelDbTimestampOracle;
 import io.kareldb.version.VersionedCache;
 import io.kareldb.version.VersionedValue;
 import org.apache.omid.committable.CommitTable;
@@ -77,7 +78,7 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
                                                         TimestampStorage timestampStorage) {
         try {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
-            TimestampOracle timestampOracle = new TimestampOracleImpl(
+            TimestampOracle timestampOracle = new KarelDbTimestampOracle(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
             timestampOracle.initialize();
             PostCommitActions postCommitter = new KarelDbSyncPostCommitter(commitTable.getClient());
