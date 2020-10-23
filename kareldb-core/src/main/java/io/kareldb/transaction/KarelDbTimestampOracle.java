@@ -74,6 +74,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
             long newMaxTimestamp = previousMaxTimestamp + TIMESTAMP_BATCH;
             try {
                 storage.updateMaxTimestamp(previousMaxTimestamp, newMaxTimestamp);
+                LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, newMaxTimestamp);
                 maxAllocatedTimestamp = newMaxTimestamp;
                 previousMaxTimestamp = newMaxTimestamp;
             } catch (Throwable e) {
