@@ -17,9 +17,7 @@
  */
 package io.kareldb.transaction;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.omid.committable.CommitTable;
 import org.apache.omid.metrics.Gauge;
 import org.apache.omid.metrics.MetricsRegistry;
 import org.apache.omid.timestamp.storage.TimestampStorage;
@@ -51,13 +49,13 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
     private long maxTimestamp;
 
-    private TimestampStorage storage;
-    private Panicker panicker;
+    private final TimestampStorage storage;
+    private final Panicker panicker;
 
     private long nextAllocationThreshold;
     private volatile long maxAllocatedTimestamp;
 
-    private Executor executor = Executors.newSingleThreadExecutor(
+    private final Executor executor = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
 
     private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
