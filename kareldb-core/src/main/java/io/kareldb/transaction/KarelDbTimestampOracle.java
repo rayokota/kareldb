@@ -44,23 +44,23 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbTimestampOracle.class);
 
-    @VisibleForTesting
-    static class InMemoryTimestampStorage implements TimestampStorage {
+    static final long TIMESTAMP_BATCH = 10_000_000; // 10 million
+    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000; // 1 million
 
-        long maxTimestamp = 0;
+    private long lastTimestamp;
 
-        @Override
-        public void updateMaxTimestamp(long previousMaxTimestamp, long nextMaxTimestamp) {
-            maxTimestamp = nextMaxTimestamp;
-            LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, nextMaxTimestamp);
-        }
+    private long maxTimestamp;
 
-        @Override
-        public long getMaxTimestamp() {
-            return maxTimestamp;
-        }
+    private TimestampStorage storage;
+    private Panicker panicker;
 
-    }
+    private long nextAllocationThreshold;
+    private volatile long maxAllocatedTimestamp;
+
+    private Executor executor = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
+
+    private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
 
     private class AllocateTimestampBatchTask implements Runnable {
         long previousMaxTimestamp;
@@ -81,26 +81,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
                 panicker.panic("Can't store the new max timestamp", e);
             }
         }
-
     }
-
-    static final long TIMESTAMP_BATCH = 10_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 10 million
-    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 1 million
-
-    private long lastTimestamp;
-
-    private long maxTimestamp;
-
-    private TimestampStorage storage;
-    private Panicker panicker;
-
-    private long nextAllocationThreshold;
-    private volatile long maxAllocatedTimestamp;
-
-    private Executor executor = Executors.newSingleThreadExecutor(
-            new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
-
-    private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
 
     @Inject
     public KarelDbTimestampOracle(MetricsRegistry metrics,
@@ -116,7 +97,6 @@ public class KarelDbTimestampOracle implements TimestampOracle {
                 return maxTimestamp;
             }
         });
-
     }
 
     @Override
@@ -137,7 +117,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public long next() {
-        lastTimestamp += CommitTable.MAX_CHECKPOINTS_PER_TXN;
+        lastTimestamp += 1;
 
         if (lastTimestamp >= nextAllocationThreshold) {
             // set the nextAllocationThread to max value of long in order to
@@ -170,5 +150,4 @@ public class KarelDbTimestampOracle implements TimestampOracle {
     public String toString() {
         return String.format("TimestampOracle -> LastTimestamp: %d, MaxTimestamp: %d", lastTimestamp, maxTimestamp);
     }
-
 }
