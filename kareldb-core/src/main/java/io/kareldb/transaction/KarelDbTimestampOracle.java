@@ -44,46 +44,6 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbTimestampOracle.class);
 
-    @VisibleForTesting
-    static class InMemoryTimestampStorage implements TimestampStorage {
-
-        long maxTimestamp = 0;
-
-        @Override
-        public void updateMaxTimestamp(long previousMaxTimestamp, long nextMaxTimestamp) {
-            maxTimestamp = nextMaxTimestamp;
-            LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, nextMaxTimestamp);
-        }
-
-        @Override
-        public long getMaxTimestamp() {
-            return maxTimestamp;
-        }
-
-    }
-
-    private class AllocateTimestampBatchTask implements Runnable {
-        long previousMaxTimestamp;
-
-        AllocateTimestampBatchTask(long previousMaxTimestamp) {
-            this.previousMaxTimestamp = previousMaxTimestamp;
-        }
-
-        @Override
-        public void run() {
-            long newMaxTimestamp = previousMaxTimestamp + TIMESTAMP_BATCH;
-            try {
-                storage.updateMaxTimestamp(previousMaxTimestamp, newMaxTimestamp);
-                LOG.info("Updating max timestamp: (previous:{}, new:{})", previousMaxTimestamp, newMaxTimestamp);
-                maxAllocatedTimestamp = newMaxTimestamp;
-                previousMaxTimestamp = newMaxTimestamp;
-            } catch (Throwable e) {
-                panicker.panic("Can't store the new max timestamp", e);
-            }
-        }
-
-    }
-
     static final long TIMESTAMP_BATCH = 10_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 10 million
     private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000 * CommitTable.MAX_CHECKPOINTS_PER_TXN; // 1 million
 
@@ -101,6 +61,28 @@ public class KarelDbTimestampOracle implements TimestampOracle {
             new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
 
     private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
+
+    private class AllocateTimestampBatchTask implements Runnable {
+        long previousMaxTimestamp;
+
+        AllocateTimestampBatchTask(long previousMaxTimestamp) {
+            this.previousMaxTimestamp = previousMaxTimestamp;
+        }
+
+        @Override
+        public void run() {
+            long newMaxTimestamp = previousMaxTimestamp + TIMESTAMP_BATCH;
+            try {
+                storage.updateMaxTimestamp(previousMaxTimestamp, newMaxTimestamp);
+                LOG.info("Updating timestamp oracle with max timestamp: (previous:{}, new:{})",
+                    previousMaxTimestamp, newMaxTimestamp);
+                maxAllocatedTimestamp = newMaxTimestamp;
+                previousMaxTimestamp = newMaxTimestamp;
+            } catch (Throwable e) {
+                panicker.panic("Can't store the new max timestamp in timestamp oracle", e);
+            }
+        }
+    }
 
     @Inject
     public KarelDbTimestampOracle(MetricsRegistry metrics,
@@ -126,7 +108,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
         this.allocateTimestampsBatchTask = new AllocateTimestampBatchTask(lastTimestamp);
 
-        executor.execute(allocateTimestampsBatchTask);
+        allocateTimestampsBatchTask.run();
 
         LOG.info("Initializing timestamp oracle with timestamp {}", this.lastTimestamp);
     }
