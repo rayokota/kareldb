@@ -134,6 +134,7 @@ public class KarelDbEngine implements Configurable, Closeable {
         commits.sync();
         timestamps.sync();
         schema.sync();
+        transactionManager.init();
     }
 
     public Schema getSchema() {

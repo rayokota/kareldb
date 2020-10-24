@@ -60,6 +60,8 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
         }
     }
 
+    private final TimestampOracle timestampOracle;
+
     private static KarelDbTransactionManager INSTANCE;
 
     public static KarelDbTransactionManager getInstance() {
@@ -80,7 +82,6 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
             MetricsRegistry metricsRegistry = new NullMetricsProvider();
             TimestampOracle timestampOracle = new KarelDbTimestampOracle(
                 metricsRegistry, timestampStorage, new RuntimeExceptionPanicker());
-            timestampOracle.initialize();
             PostCommitActions postCommitter = new KarelDbSyncPostCommitter(commitTable.getClient());
             return newInstance(commitTable, timestampOracle, postCommitter);
         } catch (IOException e) {
@@ -99,7 +100,7 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
 
             INSTANCE = new KarelDbTransactionManager(metricsRegistry,
                 postCommitter,
-                tsoClient,
+                timestampOracle,
                 commitTableClient,
                 commitTableWriter,
                 new KarelDbTransactionFactory());
@@ -112,16 +113,25 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
 
     private KarelDbTransactionManager(MetricsRegistry metricsRegistry,
                                       PostCommitActions postCommitter,
-                                      TSOProtocol tsoClient,
+                                      TimestampOracle timestampOracle,
                                       CommitTable.Client commitTableClient,
                                       CommitTable.Writer commitTableWriter,
                                       KarelDbTransactionFactory transactionFactory) {
         super(metricsRegistry,
             postCommitter,
-            tsoClient,
+            new KarelDbTimestampClient(timestampOracle, commitTableWriter),
             commitTableClient,
             commitTableWriter,
             transactionFactory);
+        this.timestampOracle = timestampOracle;
+    }
+
+    public void init() {
+        try {
+            timestampOracle.initialize();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------

@@ -100,7 +100,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
     private Executor executor = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("ts-persist-%d").build());
 
-    private Runnable allocateTimestampsBatchTask;
+    private Runnable allocateTimestampsBatchTask = new AllocateTimestampBatchTask(0);
 
     @Inject
     public KarelDbTimestampOracle(MetricsRegistry metrics,
@@ -126,8 +126,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
         this.allocateTimestampsBatchTask = new AllocateTimestampBatchTask(lastTimestamp);
 
-        // NOTE: Don't trigger first allocation of timestamps, as this node might not be leader
-        //executor.execute(allocateTimestampsBatchTask);
+        executor.execute(allocateTimestampsBatchTask);
 
         LOG.info("Initializing timestamp oracle with timestamp {}", this.lastTimestamp);
     }
