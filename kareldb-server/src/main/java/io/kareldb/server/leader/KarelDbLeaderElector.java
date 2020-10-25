@@ -49,6 +49,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -81,7 +82,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final List<URI> listeners;
     private KarelDbIdentity myIdentity;
     private final AtomicReference<KarelDbIdentity> leader = new AtomicReference<>();
-    private volatile List<KarelDbIdentity> members;
+    private volatile Collection<KarelDbIdentity> members;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
@@ -296,7 +297,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
                                 + "'listeners' configuration. This error may happen if executing in containers "
                                 + "where the default hostname is 'localhost'."
                         );
-                        setMembers(new ArrayList<>(new HashSet<>(assignment.members())));
+                        setMembers(new HashSet<>(assignment.members()));
                     } else {
                         setMembers(assignment.members());
                     }
@@ -355,11 +356,11 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         }
     }
 
-    public List<KarelDbIdentity> getMembers() {
+    public Collection<KarelDbIdentity> getMembers() {
         return members;
     }
 
-    private void setMembers(List<KarelDbIdentity> members) {
+    private void setMembers(Collection<KarelDbIdentity> members) {
         this.members = members;
     }
 
