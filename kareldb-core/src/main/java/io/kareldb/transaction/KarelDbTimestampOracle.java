@@ -42,8 +42,9 @@ public class KarelDbTimestampOracle implements TimestampOracle {
 
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbTimestampOracle.class);
 
-    static final long TIMESTAMP_BATCH = 10_000_000; // 10 million
-    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000; // 1 million
+    static final int MAX_CHECKPOINTS_PER_TXN = 1;
+    static final long TIMESTAMP_BATCH = 10_000_000 * MAX_CHECKPOINTS_PER_TXN; // 10 million
+    private static final long TIMESTAMP_REMAINING_THRESHOLD = 1_000_000 * MAX_CHECKPOINTS_PER_TXN; // 1 million
 
     private long lastTimestamp;
 
@@ -115,7 +116,7 @@ public class KarelDbTimestampOracle implements TimestampOracle {
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public long next() {
-        lastTimestamp += 1;
+        lastTimestamp += MAX_CHECKPOINTS_PER_TXN;
 
         if (lastTimestamp >= nextAllocationThreshold) {
             // set the nextAllocationThread to max value of long in order to
