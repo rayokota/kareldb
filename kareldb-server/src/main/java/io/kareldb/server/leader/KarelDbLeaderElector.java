@@ -323,6 +323,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         LOG.info("Rebalance started");
         try {
             setLeader(null);
+            setMembers(null);
         } catch (KarelDbElectionException e) {
             // This shouldn't be possible with this implementation. The exceptions from setLeader come
             // from it calling nextRange in this class, but this implementation doesn't require doing
