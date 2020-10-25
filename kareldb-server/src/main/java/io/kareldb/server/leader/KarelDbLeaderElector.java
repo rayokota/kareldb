@@ -82,7 +82,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final List<URI> listeners;
     private KarelDbIdentity myIdentity;
     private final AtomicReference<KarelDbIdentity> leader = new AtomicReference<>();
-    private volatile Collection<KarelDbIdentity> members;
+    private volatile Collection<KarelDbIdentity> members = new ArrayList<>();
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private ExecutorService executor;
@@ -323,7 +323,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         LOG.info("Rebalance started");
         try {
             setLeader(null);
-            setMembers(null);
+            setMembers(Collections.emptyList());
         } catch (KarelDbElectionException e) {
             // This shouldn't be possible with this implementation. The exceptions from setLeader come
             // from it calling nextRange in this class, but this implementation doesn't require doing
