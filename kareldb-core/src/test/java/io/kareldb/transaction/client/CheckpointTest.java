@@ -28,6 +28,7 @@ import org.apache.omid.transaction.TransactionManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,6 +232,7 @@ public class CheckpointTest {
     }
 
     @Test
+    @Ignore
     public void testOutOfCheckpoints() throws Exception {
         Transaction tx1 = tm.begin();
         KarelDbTransaction kdbTx1 = (KarelDbTransaction) tx1;
