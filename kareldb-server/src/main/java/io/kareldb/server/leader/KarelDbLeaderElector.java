@@ -51,7 +51,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -281,7 +280,6 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         try {
             switch (assignment.error()) {
                 case KarelDbProtocol.Assignment.NO_ERROR:
-                case KarelDbProtocol.Assignment.DUPLICATE_URLS:
                     if (assignment.leaderIdentity() == null) {
                         LOG.error(
                             "No leader eligible instances joined the group. "
@@ -290,20 +288,17 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
                         );
                     }
                     setLeader(assignment.leaderIdentity());
-                    if (assignment.error() == KarelDbProtocol.Assignment.DUPLICATE_URLS) {
-                        LOG.warn(
-                            "The group contained multiple members advertising the same URL. "
-                                + "Verify that each instance has a unique, routable listener by setting the "
-                                + "'listeners' configuration. This error may happen if executing in containers "
-                                + "where the default hostname is 'localhost'."
-                        );
-                        setMembers(new HashSet<>(assignment.members()));
-                    } else {
-                        setMembers(assignment.members());
-                    }
+                    setMembers(assignment.members());
                     LOG.info(isLeader() ? "Registered as leader" : "Registered as replica");
                     joinedLatch.countDown();
                     break;
+                case KarelDbProtocol.Assignment.DUPLICATE_URLS:
+                    throw new IllegalStateException(
+                        "The group contained multiple members advertising the same URL. "
+                            + "Verify that each instance has a unique, routable listener by setting the "
+                            + "'listeners' configuration. This error may happen if executing in containers "
+                            + "where the default hostname is 'localhost'."
+                    );
                 default:
                     throw new IllegalStateException("Unknown error returned from the coordination protocol");
             }
