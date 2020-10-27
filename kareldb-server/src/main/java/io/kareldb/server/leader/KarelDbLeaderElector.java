@@ -259,7 +259,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         KarelDbIdentity leader = this.leader.get();
         if (leader == null) {
             throw new KarelDbElectionException("Leader is unknown");
-        } else if (leader.equals(myIdentity)) {
+        } else if (myIdentity.equals(leader)) {
             return Optional.empty();
         } else {
             return Optional.of(leader.getUrl());
@@ -340,16 +340,16 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
 
     public boolean isLeader() {
         KarelDbIdentity leader = this.leader.get();
-        return leader != null && leader.equals(myIdentity);
+        return myIdentity.equals(leader);
     }
 
     private void setLeader(KarelDbIdentity leader) {
-        KarelDbIdentity previousLeader = this.leader.getAndSet(leader);
-
-        if (leader != null && !leader.equals(previousLeader) && leader.equals(myIdentity)) {
+        if (!isLeader() && myIdentity.equals(leader)) {
             LOG.info("Syncing caches...");
             engine.sync();
         }
+
+        this.leader.set(leader);
     }
 
     public Collection<KarelDbIdentity> getMembers() {
