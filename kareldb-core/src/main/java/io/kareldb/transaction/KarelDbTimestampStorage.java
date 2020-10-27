@@ -52,7 +52,7 @@ public class KarelDbTimestampStorage implements TimestampStorage {
         }
         cache.flush();
         if (!updated) {
-            throw new IOException("Previous max timestamp is incorrect");
+            throw new IOException("Previous max timestamp " + previousMaxTimestamp + " is incorrect");
         }
     }
 
