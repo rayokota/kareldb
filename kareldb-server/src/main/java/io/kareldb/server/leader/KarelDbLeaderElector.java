@@ -79,7 +79,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final long retryBackoffMs;
     private final KarelDbCoordinator coordinator;
     private final List<URI> listeners;
-    private KarelDbIdentity myIdentity;
+    private final KarelDbIdentity myIdentity;
     private KarelDbIdentity leader;
     private volatile Collection<KarelDbIdentity> members = new ArrayList<>();
 
