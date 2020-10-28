@@ -80,7 +80,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final KarelDbCoordinator coordinator;
     private final List<URI> listeners;
     private KarelDbIdentity myIdentity;
-    private final AtomicReference<KarelDbIdentity> leader = new AtomicReference<>();
+    private KarelDbIdentity leader;
     private volatile Collection<KarelDbIdentity> members = new ArrayList<>();
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -255,8 +255,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     }
 
     @Override
-    public Optional<String> url() {
-        KarelDbIdentity leader = this.leader.get();
+    public synchronized Optional<String> url() {
         if (leader == null) {
             throw new KarelDbElectionException("Leader is unknown");
         } else if (myIdentity.equals(leader)) {
@@ -338,18 +337,17 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
         return listeners;
     }
 
-    public boolean isLeader() {
-        KarelDbIdentity leader = this.leader.get();
+    public synchronized boolean isLeader() {
         return myIdentity.equals(leader);
     }
 
-    private void setLeader(KarelDbIdentity leader) {
+    private synchronized void setLeader(KarelDbIdentity leader) {
         if (!isLeader() && myIdentity.equals(leader)) {
             LOG.info("Syncing caches...");
             engine.sync();
         }
 
-        this.leader.set(leader);
+        this.leader = leader;
     }
 
     public Collection<KarelDbIdentity> getMembers() {

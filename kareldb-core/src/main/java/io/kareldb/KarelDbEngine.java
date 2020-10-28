@@ -39,7 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class KarelDbEngine implements Configurable, Closeable {
@@ -87,32 +89,13 @@ public class KarelDbEngine implements Configurable, Closeable {
         Map<String, Object> configs = config.originals();
         String bootstrapServers = (String) configs.get(KafkaCacheConfig.KAFKACACHE_BOOTSTRAP_SERVERS_CONFIG);
         String groupId = (String) configs.getOrDefault(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, "kareldb-1");
-        if (bootstrapServers != null) {
-            String topic = "_commits";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            commits = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
-                new InMemoryCache<>());
-        } else {
-            commits = new InMemoryCache<>();
-        }
-        commits = Caches.concurrentCache(commits);
-        commits.init();
-        if (bootstrapServers != null) {
-            String topic = "_timestamps";
-            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
-            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
-            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
-            timestamps = new KafkaCache<>(
-                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null,
-                new InMemoryCache<>());
-        } else {
-            timestamps = new InMemoryCache<>();
-        }
-        timestamps = Caches.concurrentCache(timestamps);
-        timestamps.init();
+
+        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() ->
+            commits = initCommits(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+            timestamps = initTimestamps(new HashMap<>(configs), bootstrapServers, groupId));
+        CompletableFuture.allOf(commitsFuture, timestampsFuture).join();
+
         CommitTable commitTable = new KarelDbCommitTable(commits);
         TimestampStorage timestampStorage = new KarelDbTimestampStorage(timestamps);
         transactionManager = KarelDbTransactionManager.newInstance(commitTable, timestampStorage);
@@ -126,15 +109,50 @@ public class KarelDbEngine implements Configurable, Closeable {
         }
     }
 
+    private Cache<Long, Long> initCommits(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<Long, Long> commits;
+        if (bootstrapServers != null) {
+            String topic = "_commits";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            commits = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
+        } else {
+            commits = new InMemoryCache<>();
+        }
+        commits = Caches.concurrentCache(commits);
+        commits.init();
+        return commits;
+    }
+
+    private Cache<Long, Long> initTimestamps(Map<String, Object> configs, String bootstrapServers, String groupId) {
+        Cache<Long, Long> timestamps;
+        if (bootstrapServers != null) {
+            String topic = "_timestamps";
+            configs.put(KafkaCacheConfig.KAFKACACHE_TOPIC_CONFIG, topic);
+            configs.put(KafkaCacheConfig.KAFKACACHE_GROUP_ID_CONFIG, groupId);
+            configs.put(KafkaCacheConfig.KAFKACACHE_CLIENT_ID_CONFIG, groupId + "-" + topic);
+            timestamps = new KafkaCache<>(
+                new KafkaCacheConfig(configs), Serdes.Long(), Serdes.Long(), null, new InMemoryCache<>());
+        } else {
+            timestamps = new InMemoryCache<>();
+        }
+        timestamps = Caches.concurrentCache(timestamps);
+        timestamps.init();
+        return timestamps;
+    }
+
     public boolean isInitialized() {
         return initialized.get();
     }
 
     public void sync() {
-        commits.sync();
-        timestamps.sync();
+        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
+        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
+            timestamps.sync()).thenRun(() -> transactionManager.init());
+        CompletableFuture.allOf(commitsFuture, timestampsFuture).join();
         schema.sync();
-        transactionManager.init();
     }
 
     public Schema getSchema() {
