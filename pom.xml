@@ -20,7 +20,7 @@ limitations under the License.
 
     <groupId>io.kareldb</groupId>
     <artifactId>kareldb-parent</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>kareldb</name>
