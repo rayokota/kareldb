@@ -17,7 +17,6 @@
  */
 package io.kareldb.transaction.client;
 
-import com.google.common.base.Optional;
 import io.kareldb.transaction.InMemoryCommitTable;
 import io.kareldb.transaction.InMemoryTimestampStorage;
 import io.kareldb.transaction.KarelDbTimestampClient;
@@ -30,7 +29,6 @@ import org.apache.omid.metrics.NullMetricsProvider;
 import org.apache.omid.timestamp.storage.TimestampStorage;
 import org.apache.omid.transaction.AbstractTransaction;
 import org.apache.omid.transaction.AbstractTransactionManager;
-import org.apache.omid.transaction.AbstractTransactionManagerShim;
 import org.apache.omid.transaction.CommitTimestampLocator;
 import org.apache.omid.transaction.PostCommitActions;
 import org.apache.omid.transaction.TransactionException;
@@ -39,6 +37,7 @@ import org.apache.omid.tso.SystemExitPanicker;
 import org.apache.omid.tso.TimestampOracle;
 import org.apache.omid.tso.client.CellId;
 import org.apache.omid.tso.client.TSOProtocol;
+import org.apache.phoenix.thirdparty.com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +46,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
+public class KarelDbTransactionManager extends AbstractTransactionManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(KarelDbTransactionManager.class);
 
@@ -142,7 +141,7 @@ public class KarelDbTransactionManager extends AbstractTransactionManagerShim {
     }
 
     @Override
-    public void closeResources() throws IOException {
+    protected void closeResources() throws IOException {
     }
 
     @Override

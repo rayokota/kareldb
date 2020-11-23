@@ -18,7 +18,6 @@
 package io.kareldb.transaction.client;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import io.kareldb.transaction.client.KarelDbTransactionManager.CommitTimestampLocatorImpl;
 import io.kareldb.version.VersionedCache;
@@ -30,6 +29,7 @@ import org.apache.omid.committable.CommitTable.CommitTimestamp;
 import org.apache.omid.transaction.AbstractTransaction.VisibilityLevel;
 import org.apache.omid.transaction.CommitTimestampLocator;
 import org.apache.omid.transaction.TransactionException;
+import org.apache.phoenix.thirdparty.com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

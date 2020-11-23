@@ -29,7 +29,7 @@ PARSER_BEGIN(${parser.class})
 
 package ${parser.package};
 
-<#list parser.imports as importStr>
+<#list (parser.imports) as importStr>
 import ${importStr};
 </#list>
 
@@ -84,6 +84,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOrderBy;
+import org.apache.calcite.sql.SqlPivot;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlRowTypeNameSpec;
@@ -199,10 +200,11 @@ public class ${parser.class} extends SqlAbstractParserImpl
         jj_input_stream.setTabSize(tabSize);
     }
 
-    public void switchTo(String stateName) {
-        int state = Arrays.asList(${parser.class}TokenManager.lexStateNames)
-            .indexOf(stateName);
-        token_source.SwitchTo(state);
+    public void switchTo(SqlAbstractParserImpl.LexicalState state) {
+        final int stateOrdinal =
+            Arrays.asList(${parser.class}TokenManager.lexStateNames)
+                .indexOf(state.name());
+        token_source.SwitchTo(stateOrdinal);
     }
 
     public void setQuotedCasing(Casing quotedCasing) {
@@ -1024,7 +1026,7 @@ SqlNode SqlStmt() :
 {
     (
 <#-- Add methods to parse additional statements here -->
-<#list parser.statementParserMethods as method>
+<#list (parser.statementParserMethods) as method>
         LOOKAHEAD(2) stmt = ${method}
     |
 </#list>
@@ -1032,11 +1034,11 @@ SqlNode SqlStmt() :
     |
         stmt = SqlAlter()
     |
-<#if parser.createStatementParserMethods?size != 0>
+<#if (parser.createStatementParserMethods)?size != 0>
         stmt = SqlCreate()
     |
 </#if>
-<#if parser.dropStatementParserMethods?size != 0>
+<#if (parser.dropStatementParserMethods)?size != 0>
         stmt = SqlDrop()
     |
 </#if>
@@ -1076,7 +1078,7 @@ SqlNode SqlStmtEof() :
 }
 
 <#-- Add implementations of additional parser statement calls here -->
-<#list parser.implementationFiles as file>
+<#list (parser.implementationFiles) as file>
     <#include "/@includes/"+file />
 </#list>
 
@@ -1166,7 +1168,7 @@ SqlNodeList ParenthesizedLiteralOptionCommaList() :
     }
 }
 
-void CommaSepatatedSqlHints(List<SqlNode> hints) :
+void CommaSeparatedSqlHints(List<SqlNode> hints) :
 {
     SqlIdentifier hintName;
     SqlNodeList hintOptions;
@@ -1244,11 +1246,11 @@ SqlNode TableRefWithHintsOpt() :
 }
 {
     { s = span(); }
-    tableRef = CompoundIdentifier()
+    tableRef = CompoundTableIdentifier()
     [
         LOOKAHEAD(2)
         <HINT_BEG>
-        CommaSepatatedSqlHints(hints)
+        CommaSeparatedSqlHints(hints)
         <COMMENT_END>
         {
             hintList = new SqlNodeList(hints, s.addAll(hints).end(this));
@@ -1284,7 +1286,7 @@ SqlSelect SqlSelect() :
     }
     [
         <HINT_BEG>
-        CommaSepatatedSqlHints(hints)
+        CommaSeparatedSqlHints(hints)
         <COMMENT_END>
     ]
     SqlSelectKeywords(keywords)
@@ -1469,7 +1471,8 @@ SqlNode SqlDescribe() :
     |
         // Use syntactic lookahead to determine whether a table name is coming.
         // We do not allow SimpleIdentifier() because that includes <STATEMENT>.
-        LOOKAHEAD( <TABLE> | <IDENTIFIER> | <QUOTED_IDENTIFIER>
+        LOOKAHEAD( <TABLE> | <IDENTIFIER>
+           | <HYPHENATED_IDENTIFIER> | <QUOTED_IDENTIFIER>
            | <BACK_QUOTED_IDENTIFIER> | <BRACKET_QUOTED_IDENTIFIER> )
         (<TABLE>)?
         table = CompoundIdentifier()
@@ -1878,7 +1881,7 @@ SqlLiteral JoinType() :
 {
     (
     LOOKAHEAD(3) // required for "LEFT SEMI JOIN" in Babel
-<#list parser.joinTypes as method>
+<#list (parser.joinTypes) as method>
         joinType = ${method}()
     |
 </#list>
@@ -2174,6 +2177,9 @@ SqlNode TableRef2(boolean lateral) :
         tableRef = ExtendedTableRef()
     )
     [
+        tableRef = Pivot(tableRef)
+    ]
+    [
         [ <AS> ] alias = SimpleIdentifier()
         [ columnAliasList = ParenthesizedSimpleIdentifierList() ]
         {
@@ -2290,7 +2296,7 @@ void ColumnType(List<SqlNode> list) :
     ]
     {
         list.add(name);
-        list.add(type.withNullable(nullable));
+        list.add(type.withNullable(nullable, getPos()));
     }
 }
 
@@ -2306,11 +2312,7 @@ void CompoundIdentifierType(List<SqlNode> list, List<SqlNode> extendList) :
 {
     name = CompoundIdentifier()
     [
-        type = DataType() {
-            if (!this.conformance.allowExtend()) {
-                throw SqlUtil.newContextException(getPos(), RESOURCE.extendNotAllowed());
-            }
-        }
+        type = DataType()
         [
             <NOT> <NULL> {
                 nullable = false;
@@ -2318,11 +2320,15 @@ void CompoundIdentifierType(List<SqlNode> list, List<SqlNode> extendList) :
         ]
     ]
     {
-       if (type != null) {
-           extendList.add(name);
-           extendList.add(type.withNullable(nullable));
-       }
-       list.add(name);
+        if (type != null) {
+            if (!this.conformance.allowExtend()) {
+                throw SqlUtil.newContextException(type.getParserPosition(),
+                    RESOURCE.extendNotAllowed());
+            }
+            extendList.add(name);
+            extendList.add(type.withNullable(nullable, getPos()));
+        }
+        list.add(name);
     }
 }
 
@@ -2380,24 +2386,23 @@ SqlNode ExplicitTable(SqlParserPos pos) :
  */
 SqlNode TableConstructor() :
 {
-    SqlNodeList rowConstructorList;
+    final List<SqlNode> rowConstructorList = new ArrayList<SqlNode>();
     final Span s;
 }
 {
     <VALUES> { s = span(); }
-    rowConstructorList = RowConstructorList(s)
+    RowConstructorList(rowConstructorList)
     {
         return SqlStdOperatorTable.VALUES.createCall(
-            s.end(this), rowConstructorList.toArray());
+            s.end(this), rowConstructorList);
     }
 }
 
 /**
  * Parses one or more rows in a VALUES expression.
  */
-SqlNodeList RowConstructorList(Span s) :
+void RowConstructorList(List<SqlNode> list) :
 {
-    List<SqlNode> list = new ArrayList<SqlNode>();
     SqlNode rowConstructor;
 }
 {
@@ -2406,9 +2411,6 @@ SqlNodeList RowConstructorList(Span s) :
         LOOKAHEAD(2)
         <COMMA> rowConstructor = RowConstructor() { list.add(rowConstructor); }
     )*
-    {
-        return new SqlNodeList(list, s.end(this));
-    }
 }
 
 /**
@@ -2555,26 +2557,32 @@ SqlNodeList ExpressionCommaList(
     final Span s,
     ExprContext exprContext) :
 {
-    List<SqlNode> list;
+    final List<SqlNode> list = new ArrayList<SqlNode>();
+}
+{
+    ExpressionCommaList2(list, exprContext) {
+        return new SqlNodeList(list, s.addAll(list).pos());
+    }
+}
+
+/**
+ * Parses a list of expressions separated by commas,
+ * appending expressions to a given list.
+ */
+void ExpressionCommaList2(List<SqlNode> list, ExprContext exprContext) :
+{
     SqlNode e;
 }
 {
-    e = Expression(exprContext)
-    {
-        list = startList(e);
-    }
+    e = Expression(exprContext) { list.add(e); }
     (
         // NOTE jvs 6-Feb-2004:  See comments at top of file for why
         // hint is necessary here.
         LOOKAHEAD(2)
-        <COMMA> e = Expression(ExprContext.ACCEPT_SUB_QUERY)
-        {
+        <COMMA> e = Expression(ExprContext.ACCEPT_SUB_QUERY) {
             list.add(e);
         }
     )*
-    {
-        return new SqlNodeList(list, s.addAll(list).pos());
-    }
 }
 
 /**
@@ -2807,6 +2815,71 @@ SqlSnapshot Snapshot(SqlNode tableRef) :
     e = Expression(ExprContext.ACCEPT_NON_QUERY) {
         return new SqlSnapshot(s.end(this), tableRef, e);
     }
+}
+
+/** Parses a PIVOT clause following a table expression. */
+SqlNode Pivot(SqlNode tableRef) :
+{
+    final Span s;
+    final Span s2;
+    final List<SqlNode> aggList = new ArrayList<SqlNode>();
+    final List<SqlNode> valueList = new ArrayList<SqlNode>();
+    final SqlNodeList axisList;
+    final SqlNodeList inList;
+}
+{
+    <PIVOT> { s = span(); }
+    <LPAREN>
+    PivotAgg(aggList) ( <COMMA> PivotAgg(aggList) )*
+    <FOR> axisList = SimpleIdentifierOrList()
+    <IN> <LPAREN> { s2 = span(); }
+    [ PivotValue(valueList) ( <COMMA> PivotValue(valueList) )* ]
+    <RPAREN> {
+        inList = new SqlNodeList(valueList, s2.end(this));
+    }
+    <RPAREN>
+    {
+        return new SqlPivot(s.end(this), tableRef,
+            new SqlNodeList(aggList, SqlParserPos.sum(aggList)),
+            axisList, inList);
+    }
+}
+
+void PivotAgg(List<SqlNode> list) :
+{
+    final SqlNode e;
+    final SqlIdentifier alias;
+}
+{
+    e = NamedFunctionCall()
+    (
+        [ <AS> ] alias = SimpleIdentifier() {
+            list.add(
+                SqlStdOperatorTable.AS.createCall(Span.of(e).end(this), e,
+                    alias));
+        }
+    |
+        { list.add(e); }
+    )
+}
+
+void PivotValue(List<SqlNode> list) :
+{
+    final SqlNode e;
+    final SqlNodeList tuple;
+    final SqlIdentifier alias;
+}
+{
+    e = RowConstructor() { tuple = SqlParserUtil.stripRow(e); }
+    (
+        [ <AS> ] alias = SimpleIdentifier() {
+            list.add(
+                SqlStdOperatorTable.AS.createCall(Span.of(tuple).end(this),
+                    tuple, alias));
+        }
+    |
+        { list.add(tuple); }
+    )
 }
 
 /**
@@ -3465,7 +3538,7 @@ List<Object> Expression2(ExprContext exprContext) :
                     |
                         <SIMILAR> <TO> { op = SqlStdOperatorTable.SIMILAR_TO; }
                     )
-                <#if parser.includePosixOperators>
+                <#if (parser.includePosixOperators)>
                 |
                     <NEGATE> <TILDE> { op = SqlStdOperatorTable.NEGATED_POSIX_REGEX_CASE_SENSITIVE; }
                     [ <STAR> { op = SqlStdOperatorTable.NEGATED_POSIX_REGEX_CASE_INSENSITIVE; } ]
@@ -3489,7 +3562,7 @@ List<Object> Expression2(ExprContext exprContext) :
                     }
                 ]
             |
-            <#list parser.extraBinaryExpressions as extra >
+            <#list (parser.extraBinaryExpressions) as extra >
                 ${extra}(list, exprContext, s)
             |
             </#list>
@@ -3927,7 +4000,7 @@ SqlAlter SqlAlter() :
     <ALTER> { s = span(); }
     (
 <#-- additional literal parser methods are included here -->
-<#list parser.alterStatementParserMethods as method>
+<#list (parser.alterStatementParserMethods) as method>
         alterNode = ${method}(s)
     |
 </#list>
@@ -3946,7 +4019,7 @@ String Scope() :
     ( <SYSTEM> | <SESSION> ) { return token.image.toUpperCase(Locale.ROOT); }
 }
 
-<#if parser.createStatementParserMethods?size != 0>
+<#if (parser.createStatementParserMethods)?size != 0>
 /**
  * Parses a CREATE statement.
  */
@@ -3965,7 +4038,7 @@ SqlCreate SqlCreate() :
     ]
     (
 <#-- additional literal parser methods are included here -->
-<#list parser.createStatementParserMethods as method>
+<#list (parser.createStatementParserMethods) as method>
         create = ${method}(s, replace)
         <#sep>| LOOKAHEAD(2) </#sep>
 </#list>
@@ -3976,7 +4049,7 @@ SqlCreate SqlCreate() :
 }
 </#if>
 
-<#if parser.dropStatementParserMethods?size != 0>
+<#if (parser.dropStatementParserMethods)?size != 0>
 /**
  * Parses a DROP statement.
  */
@@ -3990,7 +4063,7 @@ SqlDrop SqlDrop() :
     <DROP> { s = span(); }
     (
 <#-- additional literal parser methods are included here -->
-<#list parser.dropStatementParserMethods as method>
+<#list (parser.dropStatementParserMethods) as method>
         drop = ${method}(s, replace)
         <#sep>|</#sep>
 </#list>
@@ -4039,7 +4112,7 @@ SqlNode NonIntervalLiteral() :
     |
         e = DateTimeLiteral()
 <#-- additional literal parser methods are included here -->
-<#list parser.literalParserMethods as method>
+<#list (parser.literalParserMethods) as method>
     |
         e = ${method}
 </#list>
@@ -4137,6 +4210,8 @@ SqlNode StringLiteral() :
     int nfrags = 0;
     List<SqlLiteral> frags = null;
     char unicodeEscapeChar = 0;
+    String charSet = null;
+    SqlCharStringLiteral literal;
 }
 {
     // A continued string literal consists of a head fragment and one or more
@@ -4184,10 +4259,7 @@ SqlNode StringLiteral() :
             return SqlStdOperatorTable.LITERAL_CHAIN.createCall(pos2, frags);
         }
     }
-    |
-    {
-        String charSet = null;
-    }
+|
     (
         <PREFIXED_STRING_LITERAL>
         { charSet = SqlParserUtil.getCharacterSet(token.image); }
@@ -4201,7 +4273,6 @@ SqlNode StringLiteral() :
     )
     {
         p = SqlParserUtil.parseString(token.image);
-        SqlCharStringLiteral literal;
         try {
             literal = SqlLiteral.createCharString(p, charSet, getPos());
         } catch (java.nio.charset.UnsupportedCharsetException e) {
@@ -4256,6 +4327,28 @@ SqlNode StringLiteral() :
             }
             SqlParserPos pos2 = SqlParserPos.sum(rands);
             return SqlStdOperatorTable.LITERAL_CHAIN.createCall(pos2, rands);
+        }
+    }
+|
+    <BIG_QUERY_DOUBLE_QUOTED_STRING>
+    {
+        p = SqlParserUtil.strip(getToken(0).image, DQ, DQ, "\\\"", Casing.UNCHANGED);
+        try {
+            return SqlLiteral.createCharString(p, charSet, getPos());
+        } catch (java.nio.charset.UnsupportedCharsetException e) {
+            throw SqlUtil.newContextException(getPos(),
+                RESOURCE.unknownCharacterSet(charSet));
+        }
+    }
+|
+    <BIG_QUERY_QUOTED_STRING>
+    {
+        p = SqlParserUtil.strip(getToken(0).image, "'", "'", "\\'", Casing.UNCHANGED);
+        try {
+            return SqlLiteral.createCharString(p, charSet, getPos());
+        } catch (java.nio.charset.UnsupportedCharsetException e) {
+            throw SqlUtil.newContextException(getPos(),
+                RESOURCE.unknownCharacterSet(charSet));
         }
     }
 }
@@ -4727,6 +4820,11 @@ void IdentifierSegment(List<String> names, List<SqlParserPos> positions) :
             pos = getPos();
         }
     |
+        <HYPHENATED_IDENTIFIER> {
+            id = unquotedIdentifier();
+            pos = getPos();
+        }
+    |
         <QUOTED_IDENTIFIER> {
             id = SqlParserUtil.strip(getToken(0).image, DQ, DQ, DQDQ,
                 quotedCasing);
@@ -4776,6 +4874,35 @@ void IdentifierSegment(List<String> names, List<SqlParserPos> positions) :
         names.add(id);
         if (positions != null) {
             positions.add(pos);
+        }
+    }
+}
+
+/** As {@link #IdentifierSegment} but part of a table name (for example,
+ * following {@code FROM}, {@code INSERT} or {@code UPDATE}).
+ *
+ * <p>In some dialects the lexical rules for table names are different from
+ * for other identifiers. For example, in BigQuery, table names may contain
+ * hyphens. */
+void TableIdentifierSegment(List<String> names, List<SqlParserPos> positions) :
+{
+}
+{
+    IdentifierSegment(names, positions)
+    {
+        final int n = names.size();
+        if (n > 0
+                && positions.size() == n
+                && names.get(n - 1).contains(".")
+                && positions.get(n - 1).isQuoted()
+                && this.conformance.splitQuotedTableName()) {
+            final String name = names.remove(n - 1);
+            final SqlParserPos pos = positions.remove(n - 1);
+            final String[] splitNames = name.split("\\.");
+            for (String splitName : splitNames) {
+                names.add(splitName);
+                positions.add(pos);
+            }
         }
     }
 }
@@ -4857,7 +4984,29 @@ SqlNodeList ParenthesizedSimpleIdentifierList() :
     }
 }
 
-<#if parser.includeCompoundIdentifier >
+/** List of simple identifiers in parentheses or one simple identifier.
+ *
+ * <ul>Examples:
+ * <li>{@code DEPTNO}
+ * <li>{@code (EMPNO, DEPTNO)}
+ * </ul>
+ */
+SqlNodeList SimpleIdentifierOrList() :
+{
+    SqlIdentifier id;
+    SqlNodeList list;
+}
+{
+    id = SimpleIdentifier() {
+        return new SqlNodeList(Collections.singletonList(id), id.getParserPosition());
+    }
+|
+    list = ParenthesizedSimpleIdentifierList() {
+        return list;
+    }
+}
+
+<#if (parser.includeCompoundIdentifier) >
 /**
  * Parses a compound identifier.
  */
@@ -4888,6 +5037,27 @@ SqlIdentifier CompoundIdentifier() :
         if (star) {
             return SqlIdentifier.star(nameList, pos, posList);
         }
+        return new SqlIdentifier(nameList, null, pos, posList);
+    }
+}
+
+/**
+ * Parses a compound identifier in the FROM clause.
+ */
+SqlIdentifier CompoundTableIdentifier() :
+{
+    final List<String> nameList = new ArrayList<String>();
+    final List<SqlParserPos> posList = new ArrayList<SqlParserPos>();
+}
+{
+    TableIdentifierSegment(nameList, posList)
+    (
+        LOOKAHEAD(2)
+        <DOT>
+        TableIdentifierSegment(nameList, posList)
+    )*
+    {
+        SqlParserPos pos = SqlParserPos.sum(posList);
         return new SqlIdentifier(nameList, null, pos, posList);
     }
 }
@@ -4995,15 +5165,13 @@ SqlDataTypeSpec DataType() :
 }
 {
     typeName = TypeName() {
-        s = span();
+        s = Span.of(typeName.getParserPos());
     }
     (
         typeName = CollectionsTypeName(typeName)
     )*
     {
-        return new SqlDataTypeSpec(
-            typeName,
-            s.end(this));
+        return new SqlDataTypeSpec(typeName, s.add(typeName.getParserPos()).pos());
     }
 }
 
@@ -5019,7 +5187,7 @@ SqlTypeNameSpec TypeName() :
     (
 <#-- additional types are included here -->
 <#-- put custom data types in front of Calcite core data types -->
-<#list parser.dataTypeParserMethods as method>
+<#list (parser.dataTypeParserMethods) as method>
         LOOKAHEAD(2)
         typeNameSpec = ${method}
     |
@@ -5072,25 +5240,26 @@ SqlTypeNameSpec SqlTypeName1(Span s) :
             if (!this.conformance.allowGeometry()) {
                 throw SqlUtil.newContextException(getPos(), RESOURCE.geometryDisabled());
             }
+            s.add(this);
             sqlTypeName = SqlTypeName.GEOMETRY;
         }
     |
-        <BOOLEAN> { sqlTypeName = SqlTypeName.BOOLEAN; }
+        <BOOLEAN> { s.add(this); sqlTypeName = SqlTypeName.BOOLEAN; }
     |
-        ( <INTEGER> | <INT> ) { sqlTypeName = SqlTypeName.INTEGER; }
+        ( <INTEGER> | <INT> ) { s.add(this); sqlTypeName = SqlTypeName.INTEGER; }
     |
-        <TINYINT> { sqlTypeName = SqlTypeName.TINYINT; }
+        <TINYINT> { s.add(this); sqlTypeName = SqlTypeName.TINYINT; }
     |
-        <SMALLINT> { sqlTypeName = SqlTypeName.SMALLINT; }
+        <SMALLINT> { s.add(this); sqlTypeName = SqlTypeName.SMALLINT; }
     |
-        <BIGINT> { sqlTypeName = SqlTypeName.BIGINT; }
+        <BIGINT> { s.add(this); sqlTypeName = SqlTypeName.BIGINT; }
     |
-        <REAL> { sqlTypeName = SqlTypeName.REAL; }
+        <REAL> { s.add(this); sqlTypeName = SqlTypeName.REAL; }
     |
         <DOUBLE> { s.add(this); }
         [ <PRECISION> ] { sqlTypeName = SqlTypeName.DOUBLE; }
     |
-        <FLOAT> { sqlTypeName = SqlTypeName.FLOAT; }
+        <FLOAT> { s.add(this); sqlTypeName = SqlTypeName.FLOAT; }
     )
     {
         return new SqlBasicTypeNameSpec(sqlTypeName, s.end(this));
@@ -5112,7 +5281,7 @@ SqlTypeNameSpec SqlTypeName2(Span s) :
             { sqlTypeName = SqlTypeName.BINARY; }
         )
     |
-        <VARBINARY> { sqlTypeName = SqlTypeName.VARBINARY; }
+        <VARBINARY> { s.add(this); sqlTypeName = SqlTypeName.VARBINARY; }
     )
     precision = PrecisionOpt()
     {
@@ -5129,9 +5298,9 @@ SqlTypeNameSpec SqlTypeName3(Span s) :
 }
 {
     (
-        (<DECIMAL> | <DEC> | <NUMERIC>) { sqlTypeName = SqlTypeName.DECIMAL; }
+        (<DECIMAL> | <DEC> | <NUMERIC>) { s.add(this); sqlTypeName = SqlTypeName.DECIMAL; }
     |
-        <ANY> { sqlTypeName = SqlTypeName.ANY; }
+        <ANY> { s.add(this); sqlTypeName = SqlTypeName.ANY; }
     )
     [
         <LPAREN>
@@ -5260,7 +5429,7 @@ void FieldNameTypeCommaList(
     nullable = NullableOptDefaultFalse()
     {
         fieldNames.add(fName);
-        fieldTypes.add(fType.withNullable(nullable));
+        fieldTypes.add(fType.withNullable(nullable, getPos()));
     }
     (
         <COMMA>
@@ -5269,7 +5438,7 @@ void FieldNameTypeCommaList(
         nullable = NullableOptDefaultFalse()
         {
             fieldNames.add(fName);
-            fieldTypes.add(fType.withNullable(nullable));
+            fieldTypes.add(fType.withNullable(nullable, getPos()));
         }
     )*
 }
@@ -5310,7 +5479,7 @@ SqlTypeNameSpec CharacterTypeName(Span s) :
             { sqlTypeName = SqlTypeName.CHAR; }
         )
     |
-        <VARCHAR> { sqlTypeName = SqlTypeName.VARCHAR; }
+        <VARCHAR> { s.add(this); sqlTypeName = SqlTypeName.VARCHAR; }
     )
     precision = PrecisionOpt()
     [
@@ -5330,6 +5499,7 @@ SqlTypeNameSpec DateTimeTypeName() :
     int precision = -1;
     SqlTypeName typeName;
     boolean withLocalTimeZone = false;
+    final Span s;
 }
 {
     <DATE> {
@@ -5338,7 +5508,7 @@ SqlTypeNameSpec DateTimeTypeName() :
     }
 |
     LOOKAHEAD(2)
-    <TIME>
+    <TIME> { s = span(); }
     precision = PrecisionOpt()
     withLocalTimeZone = TimeZoneOpt()
     {
@@ -5347,10 +5517,10 @@ SqlTypeNameSpec DateTimeTypeName() :
         } else {
             typeName = SqlTypeName.TIME;
         }
-        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+        return new SqlBasicTypeNameSpec(typeName, precision, s.end(this));
     }
 |
-    <TIMESTAMP>
+    <TIMESTAMP> { s = span(); }
     precision = PrecisionOpt()
     withLocalTimeZone = TimeZoneOpt()
     {
@@ -5359,7 +5529,7 @@ SqlTypeNameSpec DateTimeTypeName() :
         } else {
             typeName = SqlTypeName.TIMESTAMP;
         }
-        return new SqlBasicTypeNameSpec(typeName, precision, getPos());
+        return new SqlBasicTypeNameSpec(typeName, precision, s.end(this));
     }
 }
 
@@ -5629,7 +5799,7 @@ SqlNode BuiltinFunctionCall() :
     |
         node = TimestampDiffFunctionCall() { return node; }
     |
-<#list parser.builtinFunctionCallMethods as method>
+<#list (parser.builtinFunctionCallMethods) as method>
         node = ${method} { return node; }
     |
 </#list>
@@ -6906,7 +7076,7 @@ SqlPostfixOperator PostfixRowOperator() :
 /* KEYWORDS:  anything in this list is a reserved word unless it appears
    in the NonReservedKeyWord() production. */
 
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < A: "A" >
 |   < ABS: "ABS" >
@@ -7055,13 +7225,13 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < DEFINED: "DEFINED" >
 |   < DEFINER: "DEFINER" >
 |   < DEGREE: "DEGREE" >
-|   < DELETE: "DELETE" >
+|   < DELETE: "DELETE" > { beforeTableName(); }
 |   < DENSE_RANK: "DENSE_RANK" >
 |   < DEPTH: "DEPTH" >
 |   < DEREF: "DEREF" >
 |   < DERIVED: "DERIVED" >
 |   < DESC: "DESC" >
-|   < DESCRIBE: "DESCRIBE" >
+|   < DESCRIBE: "DESCRIBE" > { beforeTableName(); }
 |   < DESCRIPTION: "DESCRIPTION" >
 |   < DESCRIPTOR: "DESCRIPTOR" >
 |   < DETERMINISTIC: "DETERMINISTIC" >
@@ -7121,7 +7291,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < FRAC_SECOND: "FRAC_SECOND" >
 |   < FRAME_ROW: "FRAME_ROW" >
 |   < FREE: "FREE" >
-|   < FROM: "FROM" >
+|   < FROM: "FROM" > { beforeTableName(); }
 |   < FULL: "FULL" >
 |   < FUNCTION: "FUNCTION" >
 |   < FUSION: "FUSION" >
@@ -7160,7 +7330,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < INOUT: "INOUT" >
 |   < INPUT: "INPUT" >
 |   < INSENSITIVE: "INSENSITIVE" >
-|   < INSERT: "INSERT" >
+|   < INSERT: "INSERT" > { beforeTableName(); }
 |   < INSTANCE: "INSTANCE" >
 |   < INSTANTIABLE: "INSTANTIABLE" >
 |   < INT: "INT" >
@@ -7175,7 +7345,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < ISOYEAR: "ISOYEAR" >
 |   < ISOLATION: "ISOLATION" >
 |   < JAVA: "JAVA" >
-|   < JOIN: "JOIN" >
+|   < JOIN: "JOIN" > { beforeTableName(); }
 |   < JSON: "JSON" >
 |   < JSON_ARRAY: "JSON_ARRAY">
 |   < JSON_ARRAYAGG: "JSON_ARRAYAGG">
@@ -7221,7 +7391,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < MAXVALUE: "MAXVALUE" >
 |   < MEASURES: "MEASURES" >
 |   < MEMBER: "MEMBER" >
-|   < MERGE: "MERGE" >
+|   < MERGE: "MERGE" > { beforeTableName(); }
 |   < MESSAGE_LENGTH: "MESSAGE_LENGTH" >
 |   < MESSAGE_OCTET_LENGTH: "MESSAGE_OCTET_LENGTH" >
 |   < MESSAGE_TEXT: "MESSAGE_TEXT" >
@@ -7313,6 +7483,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < PERCENT_RANK: "PERCENT_RANK" >
 |   < PERIOD: "PERIOD" >
 |   < PERMUTE: "PERMUTE" >
+|   < PIVOT: "PIVOT" >
 |   < PLACING: "PLACING" >
 |   < PLAN: "PLAN" >
 |   < PLI: "PLI" >
@@ -7396,7 +7567,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < SECTION: "SECTION" >
 |   < SECURITY: "SECURITY" >
 |   < SEEK: "SEEK" >
-|   < SELECT: "SELECT" >
+|   < SELECT: "SELECT" > { afterTableName(); }
 |   < SELF: "SELF" >
 |   < SENSITIVE: "SENSITIVE" >
 |   < SEQUENCE: "SEQUENCE" >
@@ -7405,7 +7576,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < SERVER_NAME: "SERVER_NAME" >
 |   < SESSION: "SESSION" >
 |   < SESSION_USER: "SESSION_USER" >
-|   < SET: "SET" >
+|   < SET: "SET" > { afterTableName(); }
 |   < SETS: "SETS" >
 |   < SET_MINUS: "MINUS">
 |   < SHOW: "SHOW" >
@@ -7495,7 +7666,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < SYSTEM: "SYSTEM" >
 |   < SYSTEM_TIME: "SYSTEM_TIME" >
 |   < SYSTEM_USER: "SYSTEM_USER" >
-|   < TABLE: "TABLE" >
+|   < TABLE: "TABLE" > { beforeTableName(); }
 |   < TABLE_NAME: "TABLE_NAME" >
 |   < TABLESAMPLE: "TABLESAMPLE" >
 |   < TEMPORARY: "TEMPORARY" >
@@ -7541,7 +7712,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < UNKNOWN: "UNKNOWN" >
 |   < UNNAMED: "UNNAMED" >
 |   < UNNEST: "UNNEST" >
-|   < UPDATE: "UPDATE" >
+|   < UPDATE: "UPDATE" > { beforeTableName(); }
 |   < UPPER: "UPPER" >
 |   < UPSERT: "UPSERT" >
 |   < USAGE: "USAGE" >
@@ -7555,7 +7726,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < UTF16: "UTF16" >
 |   < UTF32: "UTF32" >
 |   < VALUE: "VALUE" >
-|   < VALUES: "VALUES" >
+|   < VALUES: "VALUES" > { afterTableName(); }
 |   < VALUE_OF: "VALUE_OF" >
 |   < VAR_POP: "VAR_POP" >
 |   < VAR_SAMP: "VAR_SAMP" >
@@ -7582,7 +7753,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < YEARS: "YEARS" >
 |   < ZONE: "ZONE" >
 <#-- additional parser keywords are included here -->
-<#list parser.keywords as keyword>
+<#list (parser.keywords) as keyword>
 |   < ${keyword}: "${keyword}" >
 </#list>
 }
@@ -7621,7 +7792,7 @@ void NonReservedKeyWord0of3() :
 }
 {
     (
-<#list parser.nonReservedKeywords + parser.nonReservedKeywordsToAdd as keyword>
+<#list (parser.nonReservedKeywords) + (parser.nonReservedKeywordsToAdd) as keyword>
 <#if keyword?index == 0>
         <${keyword}>
 <#elseif keyword?index % 3 == 0>
@@ -7637,7 +7808,7 @@ void NonReservedKeyWord1of3() :
 }
 {
     (
-<#list parser.nonReservedKeywords + parser.nonReservedKeywordsToAdd as keyword>
+<#list (parser.nonReservedKeywords) + (parser.nonReservedKeywordsToAdd) as keyword>
 <#if keyword?index == 1>
         <${keyword}>
 <#elseif keyword?index % 3 == 1>
@@ -7653,7 +7824,7 @@ void NonReservedKeyWord2of3() :
 }
 {
     (
-<#list parser.nonReservedKeywords + parser.nonReservedKeywordsToAdd as keyword>
+<#list (parser.nonReservedKeywords) + (parser.nonReservedKeywordsToAdd) as keyword>
 <#if keyword?index == 2>
         <${keyword}>
 <#elseif keyword?index % 3 == 2>
@@ -7665,7 +7836,7 @@ void NonReservedKeyWord2of3() :
 
 /* LITERALS */
 
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < UNSIGNED_INTEGER_LITERAL: (["0"-"9"])+ >
 |
@@ -7688,7 +7859,12 @@ void NonReservedKeyWord2of3() :
     /* To improve error reporting, we allow all kinds of characters,
      * not just hexits, in a binary string literal. */
     < BINARY_STRING_LITERAL: ["x","X"] <QUOTE> ( (~["'"]) | ("''"))* <QUOTE> >
-|
+}
+
+// All databases except BigQuery support standard single-quoted literals,
+// which use single-quote as the escape character.
+<DEFAULT, DQID, BTID> TOKEN :
+{
     < QUOTED_STRING: <QUOTE> ( (~["'"]) | ("''"))* <QUOTE> >
 |
     < PREFIXED_STRING_LITERAL: ("_" <CHARSETNAME> | "N") <QUOTED_STRING> >
@@ -7700,7 +7876,22 @@ void NonReservedKeyWord2of3() :
     >
 }
 
-<DEFAULT, DQID, BTID> TOKEN :
+// BigQuery supports single- and double-quoted literals with back-slash
+// as the escape character.
+<BQID, BQHID> TOKEN :
+{
+    // BigQuery-style double-quoted string, escaped using backslash
+    < BIG_QUERY_DOUBLE_QUOTED_STRING:
+      <DOUBLE_QUOTE> ( (~["\\", "\""]) | ("\\" ~[]) )* <DOUBLE_QUOTE>
+    >
+|
+    // BigQuery-style single-quoted string, escaped using backslash
+    < BIG_QUERY_QUOTED_STRING:
+      <QUOTE> ( (~["\\", "'"]) | ("\\" ~[]) )* <QUOTE>
+    >
+}
+
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < UNICODE_QUOTED_ESCAPE_CHAR:
     <QUOTE>
@@ -7711,11 +7902,11 @@ void NonReservedKeyWord2of3() :
 
 /* SEPARATORS */
 
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < LPAREN: "(">
 |   < RPAREN: ")">
-<#if parser.includeBraces >
+<#if (parser.includeBraces) >
 |   < LBRACE_D: "{" (" ")* ["d","D"] >
 |   < LBRACE_T: "{" (" ")* ["t","T"] >
 |   < LBRACE_TS: "{" (" ")* ["t","T"] ["s","S"] >
@@ -7734,7 +7925,7 @@ void NonReservedKeyWord2of3() :
 
 /* OPERATORS */
 
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < EQ: "=" >
 |   < GT: ">" >
@@ -7758,7 +7949,7 @@ void NonReservedKeyWord2of3() :
 |   < VERTICAL_BAR: "|" >
 |   < CARET: "^" >
 |   < DOLLAR: "$" >
-<#list parser.binaryOperatorsTokens as operator>
+<#list (parser.binaryOperatorsTokens) as operator>
 |   ${operator}
 </#list>
 }
@@ -7769,7 +7960,7 @@ void NonReservedKeyWord2of3() :
  *****************************************/
 
 TOKEN_MGR_DECLS : {
-    List<Integer> lexicalStateStack = new ArrayList<Integer>();
+    final List<Integer> lexicalStateStack = new ArrayList<Integer>();
 
     void pushState() {
       lexicalStateStack.add(curLexState);
@@ -7779,7 +7970,20 @@ TOKEN_MGR_DECLS : {
       SwitchTo(lexicalStateStack.remove(lexicalStateStack.size() - 1));
     }
 
-<#if parser.includeAdditionalDeclarations>
+    void beforeTableName() {
+      if (curLexState == BQID) {
+        pushState();
+        SwitchTo(BQHID);
+      }
+    }
+
+    void afterTableName() {
+      if (curLexState == BQHID) {
+        popState();
+      }
+    }
+
+<#if (parser.includeAdditionalDeclarations)>
   <#include "/@includes/tokenManagerDeclarations.ftl" />
 </#if>
 }
@@ -7790,12 +7994,22 @@ Lexical states:
 DEFAULT: Identifiers are quoted in brackets, e.g. [My Identifier]
 DQID:    Identifiers are double-quoted, e.g. "My Identifier"
 BTID:    Identifiers are enclosed in back-ticks, e.g. `My Identifier`
+BQID:    Identifiers are enclosed in back-ticks, e.g. `My Identifier`,
+         and with the potential to shift into BQHID in contexts where table
+         names are expected, and thus allow hyphen-separated identifiers as
+         part of table names
+BQHID:   Identifiers are enclosed in back-ticks, e.g. `My Identifier`
+         and unquoted identifiers may contain hyphens, e.g. foo-bar
 IN_SINGLE_LINE_COMMENT:
 IN_FORMAL_COMMENT:
 IN_MULTI_LINE_COMMENT:
 
-DEFAULT, DQID, BTID are the 3 'normal states'. Behavior is identical except
-for how quoted identifiers are recognized.
+DEFAULT, DQID, BTID, BQID are the 4 'normal states'. Behavior is identical
+except for how quoted identifiers are recognized.
+
+The BQHID state exists only at the start of a table name (e.g. immediately after
+FROM or INSERT INTO). As soon as an identifier is seen, the state shifts back
+to BTID.
 
 After a comment has completed, the lexer returns to the previous state, one
 of the 'normal states'.
@@ -7803,7 +8017,7 @@ of the 'normal states'.
 
 /* WHITE SPACE */
 
-<DEFAULT, DQID, BTID> SKIP :
+<DEFAULT, DQID, BTID, BQID, BQHID> SKIP :
 {
     " "
 |   "\t"
@@ -7814,23 +8028,23 @@ of the 'normal states'.
 
 /* COMMENTS */
 
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < HINT_BEG: "/*+">
 |   < COMMENT_END: "*/" >
 }
 
-<DEFAULT, DQID, BTID> MORE :
+<DEFAULT, DQID, BTID, BQID, BQHID> MORE :
 {
     <"/**" ~["/"]> { pushState(); } : IN_FORMAL_COMMENT
 }
 
-<DEFAULT, DQID, BTID> MORE :
+<DEFAULT, DQID, BTID, BQID, BQHID> MORE :
 {
     "/*" { pushState(); } : IN_MULTI_LINE_COMMENT
 }
 
-<DEFAULT, DQID, BTID> SKIP :
+<DEFAULT, DQID, BTID, BQID, BQHID> SKIP :
 {
     <SINGLE_LINE_COMMENT: ("//"|"--")(~["\n","\r"])* ("\n"|"\r"|"\r\n")? >
 }
@@ -7882,7 +8096,7 @@ MORE :
     >
 }
 
-<BTID>  TOKEN :
+<BTID, BQID, BQHID> TOKEN :
 {
     < BACK_QUOTED_IDENTIFIER:
     "`"
@@ -7895,7 +8109,20 @@ MORE :
     >
 }
 
-<DEFAULT, DQID, BTID> TOKEN :
+<BQHID> TOKEN :
+{
+    // Per BigQuery: "Project IDs must contain 6-63 lowercase letters, digits,
+    // or dashes. IDs must start with a letter and may not end with a dash."
+    // We do not restrict length, or prevent identifiers from ending in a dash.
+    < HYPHENATED_IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>|"-")* > { popState(); }
+}
+
+<DEFAULT, DQID, BTID, BQID> TOKEN :
+{
+    < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+}
+
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < COLLATION_ID:
     (<LETTER>|<DIGIT>)+ (<LETTER>|<DIGIT>|":"|"."|"-"|"_")*
@@ -7903,8 +8130,6 @@ MORE :
     (<LETTER>|"_")+
     ("$" (<LETTER>|<DIGIT>|"_")+)?
     >
-|
-    < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
 |
     < UNICODE_QUOTED_IDENTIFIER: "U" "&" <QUOTED_IDENTIFIER> >
 |
@@ -7950,7 +8175,7 @@ MORE :
 /* Special token to throw a wrench in the works. It is never valid in SQL,
    and so when it occurs, it causes the parser to print which tokens would
    have been valid at that point. Used by SqlAdvisor. */
-<DEFAULT, DQID, BTID> TOKEN :
+<DEFAULT, DQID, BTID, BQID, BQHID> TOKEN :
 {
     < BEL:
     [
