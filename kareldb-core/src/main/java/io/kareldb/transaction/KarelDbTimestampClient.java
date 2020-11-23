@@ -17,7 +17,6 @@
  */
 package io.kareldb.transaction;
 
-import com.google.common.util.concurrent.SettableFuture;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.tso.TimestampOracle;
 import org.apache.omid.tso.client.AbortException;
@@ -26,6 +25,7 @@ import org.apache.omid.tso.client.ForwardingTSOFuture;
 import org.apache.omid.tso.client.OmidClientConfiguration;
 import org.apache.omid.tso.client.TSOFuture;
 import org.apache.omid.tso.client.TSOProtocol;
+import org.apache.phoenix.thirdparty.com.google.common.util.concurrent.SettableFuture;
 
 import java.io.IOException;
 import java.util.HashMap;

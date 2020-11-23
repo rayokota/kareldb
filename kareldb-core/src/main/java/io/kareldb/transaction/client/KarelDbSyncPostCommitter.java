@@ -17,14 +17,14 @@
  */
 package io.kareldb.transaction.client;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import io.kareldb.version.VersionedCache;
 import org.apache.omid.committable.CommitTable;
 import org.apache.omid.transaction.AbstractTransaction;
 import org.apache.omid.transaction.PostCommitActions;
 import org.apache.omid.transaction.TransactionManagerException;
 import org.apache.omid.tso.client.CellId;
+import org.apache.phoenix.thirdparty.com.google.common.util.concurrent.ListenableFuture;
+import org.apache.phoenix.thirdparty.com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
