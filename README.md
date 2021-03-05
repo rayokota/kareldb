@@ -1,11 +1,11 @@
 # KarelDB - A Relational Database Backed by Apache Kafka
 
-[![Build Status][travis-shield]][travis-link]
+[![Build Status][github-actions-shield]][github-actions-link]
 [![Maven][maven-shield]][maven-link]
 [![Javadoc][javadoc-shield]][javadoc-link]
 
-[travis-shield]: https://travis-ci.org/rayokota/kareldb.svg?branch=master
-[travis-link]: https://travis-ci.org/rayokota/kareldb
+[github-actions-shield]: https://github.com/rayokota/kareldb/workflows/build/badge.svg
+[github-actions-link]: https://github.com/rayokota/kareldb/actions
 [maven-shield]: https://img.shields.io/maven-central/v/io.kareldb/kareldb-core.svg
 [maven-link]: https://search.maven.org/#search%7Cga%7C1%7Cio.kareldb
 [javadoc-shield]: https://javadoc.io/badge/io.kareldb/kareldb-core.svg?color=blue
