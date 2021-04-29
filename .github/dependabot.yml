@@ -1,0 +1,35 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: io.kcache:kcache-rocksdb
+    versions:
+    - 3.4.0
+  - dependency-name: io.kcache:kcache-mapdb
+    versions:
+    - 3.4.0
+  - dependency-name: io.kcache:kcache-lmdb
+    versions:
+    - 3.4.0
+  - dependency-name: io.kcache:kcache-bdbje
+    versions:
+    - 3.4.0
+  - dependency-name: io.kcache:kcache
+    versions:
+    - 3.4.0
+  - dependency-name: org.mockito:mockito-core
+    versions:
+    - 3.7.7
+  - dependency-name: org.eclipse.jetty:jetty-util
+    versions:
+    - 11.0.0
+  - dependency-name: org.eclipse.jetty:jetty-server
+    versions:
+    - 11.0.0
+  - dependency-name: org.eclipse.jetty:jetty-jaas
+    versions:
+    - 11.0.0
