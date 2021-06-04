@@ -142,8 +142,8 @@ public class HttpServerExtension extends HttpServer {
         };
     }
 
-    private static SslContextFactory createSslContextFactory(KarelDbConfig config) {
-        SslContextFactory sslContextFactory = new SslContextFactory();
+    private static SslContextFactory.Server createSslContextFactory(KarelDbConfig config) {
+        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         if (!config.getString(KarelDbConfig.SSL_KEYSTORE_LOCATION_CONFIG).isEmpty()) {
             sslContextFactory.setKeyStorePath(
                 config.getString(KarelDbConfig.SSL_KEYSTORE_LOCATION_CONFIG)
@@ -207,7 +207,8 @@ public class HttpServerExtension extends HttpServer {
         return sslContextFactory;
     }
 
-    private static void configureClientAuth(KarelDbConfig config, SslContextFactory sslContextFactory) {
+    private static void configureClientAuth(KarelDbConfig config,
+                                            SslContextFactory.Server sslContextFactory) {
         String clientAuthentication = config.getString(KarelDbConfig.SSL_CLIENT_AUTHENTICATION_CONFIG);
 
         switch (clientAuthentication) {

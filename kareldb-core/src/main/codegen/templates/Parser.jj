@@ -98,6 +98,7 @@ import org.apache.calcite.sql.SqlTimeLiteral;
 import org.apache.calcite.sql.SqlTimestampLiteral;
 import org.apache.calcite.sql.SqlTypeNameSpec;
 import org.apache.calcite.sql.SqlUnnestOperator;
+import org.apache.calcite.sql.SqlUnpivot;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUserDefinedTypeNameSpec;
 import org.apache.calcite.sql.SqlUtil;
@@ -105,6 +106,7 @@ import org.apache.calcite.sql.SqlWindow;
 import org.apache.calcite.sql.SqlWith;
 import org.apache.calcite.sql.SqlWithItem;
 import org.apache.calcite.sql.fun.SqlCase;
+import org.apache.calcite.sql.fun.SqlInternalOperators;
 import org.apache.calcite.sql.fun.SqlLibraryOperators;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
@@ -269,8 +271,7 @@ void debug_message1() {
 }
 
 JAVACODE String unquotedIdentifier() {
-    return SqlParserUtil.strip(getToken(0).image, null, null, null,
-        unquotedCasing);
+    return SqlParserUtil.toCase(getToken(0).image, unquotedCasing);
 }
 
 /**
@@ -870,23 +871,16 @@ List UnquantifiedFunctionParameterList(
 List FunctionParameterList(
     ExprContext exprContext) :
 {
-    SqlNode e = null;
-    List list = new ArrayList();
+    final SqlLiteral qualifier;
+    final List list = new ArrayList();
 }
 {
     <LPAREN>
-    [
-        <DISTINCT> {
-            e = SqlSelectKeyword.DISTINCT.symbol(getPos());
-        }
+    (
+        qualifier = AllOrDistinct() { list.add(qualifier); }
     |
-        <ALL> {
-            e = SqlSelectKeyword.ALL.symbol(getPos());
-        }
-    ]
-    {
-        list.add(e);
-    }
+        { list.add(null); }
+    )
     Arg0(list, exprContext)
     (
         <COMMA> {
@@ -899,6 +893,15 @@ List FunctionParameterList(
     {
         return list;
     }
+}
+
+SqlLiteral AllOrDistinct() :
+{
+}
+{
+    <DISTINCT> { return SqlSelectKeyword.DISTINCT.symbol(getPos()); }
+|
+    <ALL> { return SqlSelectKeyword.ALL.symbol(getPos()); }
 }
 
 void Arg0(List list, ExprContext exprContext) :
@@ -1269,6 +1272,7 @@ SqlNode TableRefWithHintsOpt() :
 SqlSelect SqlSelect() :
 {
     final List<SqlLiteral> keywords = new ArrayList<SqlLiteral>();
+    final SqlLiteral keyword;
     final SqlNodeList keywordList;
     List<SqlNode> selectList;
     final SqlNode fromClause;
@@ -1296,12 +1300,7 @@ SqlSelect SqlSelect() :
         }
     )?
     (
-        <DISTINCT> {
-            keywords.add(SqlSelectKeyword.DISTINCT.symbol(getPos()));
-        }
-    |   <ALL> {
-            keywords.add(SqlSelectKeyword.ALL.symbol(getPos()));
-        }
+        keyword = AllOrDistinct() { keywords.add(keyword); }
     )?
     {
         keywordList = new SqlNodeList(keywords, s.addAll(keywords).pos());
@@ -1356,7 +1355,10 @@ SqlNode SqlExplain() :
         LOOKAHEAD(2)
         <AS> <XML> { format = SqlExplainFormat.XML; }
     |
+        LOOKAHEAD(2)
         <AS> <JSON> { format = SqlExplainFormat.JSON; }
+    |
+        <AS> <DOT_FORMAT> { format = SqlExplainFormat.DOT; }
     |
         { format = SqlExplainFormat.TEXT; }
     )
@@ -1933,7 +1935,7 @@ SqlNode JoinTable(SqlNode e) :
                 joinType,
                 e2,
                 using,
-                new SqlNodeList(list.getList(), Span.of(using).end(this)));
+                new SqlNodeList(list, Span.of(using).end(this)));
         }
     |
         {
@@ -2160,7 +2162,7 @@ SqlNode TableRef2(boolean lateral) :
             }
         ]
         {
-            tableRef = unnestOp.createCall(s.end(this), args.toArray());
+            tableRef = unnestOp.createCall(s.end(this), (List<SqlNode>) args);
         }
     |
         [<LATERAL> { lateral = true; } ]
@@ -2177,7 +2179,12 @@ SqlNode TableRef2(boolean lateral) :
         tableRef = ExtendedTableRef()
     )
     [
+        LOOKAHEAD(2)
         tableRef = Pivot(tableRef)
+    ]
+    [
+        LOOKAHEAD(2)
+        tableRef = Unpivot(tableRef)
     ]
     [
         [ <AS> ] alias = SimpleIdentifier()
@@ -2460,7 +2467,7 @@ SqlNode RowConstructor() :
         // sub-queries inside of ROW and row sub-queries?  The standard does,
         // but the distinction seems to be purely syntactic.
         return SqlStdOperatorTable.ROW.createCall(s.end(valueList),
-            valueList.toArray());
+            (List<SqlNode>) valueList);
     }
 }
 
@@ -2879,6 +2886,57 @@ void PivotValue(List<SqlNode> list) :
         }
     |
         { list.add(tuple); }
+    )
+}
+
+/** Parses an UNPIVOT clause following a table expression. */
+SqlNode Unpivot(SqlNode tableRef) :
+{
+    final Span s;
+    final boolean includeNulls;
+    final SqlNodeList measureList;
+    final SqlNodeList axisList;
+    final Span s2;
+    final List<SqlNode> values = new ArrayList<SqlNode>();
+    final SqlNodeList inList;
+}
+{
+    <UNPIVOT> { s = span(); }
+    (
+        <INCLUDE> <NULLS> { includeNulls = true; }
+    |   <EXCLUDE> <NULLS> { includeNulls = false; }
+    |   { includeNulls = false; }
+    )
+    <LPAREN>
+    measureList = SimpleIdentifierOrList()
+    <FOR> axisList = SimpleIdentifierOrList()
+    <IN>
+    <LPAREN> { s2 = span(); }
+    UnpivotValue(values) ( <COMMA> UnpivotValue(values) )*
+    <RPAREN>
+    { inList = new SqlNodeList(values, s2.end(this)); }
+    <RPAREN> {
+        return new SqlUnpivot(s.end(this), tableRef, includeNulls, measureList,
+            axisList, inList);
+    }
+}
+
+void UnpivotValue(List<SqlNode> list) :
+{
+    final SqlNodeList columnList;
+    final SqlNode values;
+}
+{
+    columnList = SimpleIdentifierOrList()
+    (
+        <AS> values = RowConstructor() {
+            final SqlNodeList valueList = SqlParserUtil.stripRow(values);
+            list.add(
+                SqlStdOperatorTable.AS.createCall(Span.of(columnList).end(this),
+                    columnList, valueList));
+        }
+    |
+        { list.add(columnList); }
     )
 }
 
@@ -3531,10 +3589,18 @@ List<Object> Expression2(ExprContext exprContext) :
                         (
                             <LIKE> { op = SqlStdOperatorTable.NOT_LIKE; }
                         |
+                            <ILIKE> { op = SqlLibraryOperators.NOT_ILIKE; }
+                        |
+                            <RLIKE> { op = SqlLibraryOperators.NOT_RLIKE; }
+                        |
                             <SIMILAR> <TO> { op = SqlStdOperatorTable.NOT_SIMILAR_TO; }
                         )
                     |
                         <LIKE> { op = SqlStdOperatorTable.LIKE; }
+                    |
+                        <ILIKE> { op = SqlLibraryOperators.ILIKE; }
+                    |
+                        <RLIKE> { op = SqlLibraryOperators.RLIKE; }
                     |
                         <SIMILAR> <TO> { op = SqlStdOperatorTable.SIMILAR_TO; }
                     )
@@ -3661,7 +3727,7 @@ SqlNode Expression3(ExprContext exprContext) :
     <ROW> {
         s = span();
     }
-    list = ParenthesizedSimpleIdentifierList() {
+    list = ParenthesizedQueryOrCommaList(exprContext) {
         if (exprContext != ExprContext.ACCEPT_ALL
             && exprContext != ExprContext.ACCEPT_CURSOR
             && !this.conformance.allowExplicitRowValueConstructor())
@@ -3679,7 +3745,7 @@ SqlNode Expression3(ExprContext exprContext) :
         if (rowSpan != null) {
             // interpret as row constructor
             return SqlStdOperatorTable.ROW.createCall(rowSpan.end(list1),
-                list1.toArray());
+                (List<SqlNode>) list1);
         }
     }
     [
@@ -3733,7 +3799,7 @@ SqlNode Expression3(ExprContext exprContext) :
         } else {
             // interpret as row constructor
             return SqlStdOperatorTable.ROW.createCall(span().end(list1),
-                list1.toArray());
+                (List<SqlNode>) list1);
         }
     }
 }
@@ -3831,6 +3897,67 @@ SqlNode RowExpressionExtension() :
     )?
     {
         return e;
+    }
+}
+
+/**
+ * Parses a call to the STRING_AGG aggregate function (or to an aggregate
+ * function with similar syntax: ARRAY_AGG, ARRAY_CONCAT_AGG, GROUP_CONCAT).
+ */
+SqlCall StringAggFunctionCall() :
+{
+    final Span s, s2;
+    final SqlOperator op;
+    final List<SqlNode> args = new ArrayList();
+    final SqlLiteral qualifier;
+    final SqlNodeList orderBy;
+    final Pair<SqlParserPos, SqlOperator> nullTreatment;
+    final SqlNode separator;
+}
+{
+    (
+        <ARRAY_AGG> { s = span(); op = SqlLibraryOperators.ARRAY_AGG; }
+    |   <ARRAY_CONCAT_AGG> { s = span(); op = SqlLibraryOperators.ARRAY_CONCAT_AGG; }
+    |   <GROUP_CONCAT> { s = span(); op = SqlLibraryOperators.GROUP_CONCAT; }
+    |   <STRING_AGG> { s = span(); op = SqlLibraryOperators.STRING_AGG; }
+    )
+    <LPAREN>
+    (
+        qualifier = AllOrDistinct()
+    |
+        { qualifier = null; }
+    )
+    Arg(args, ExprContext.ACCEPT_SUB_QUERY)
+    (
+        <COMMA> {
+            // a comma-list can't appear where only a query is expected
+            checkNonQueryExpression(ExprContext.ACCEPT_SUB_QUERY);
+        }
+        Arg(args, ExprContext.ACCEPT_SUB_QUERY)
+    )*
+    (
+        nullTreatment = NullTreatment()
+    |
+        { nullTreatment = null; }
+    )
+    [
+        orderBy = OrderBy(true) {
+            args.add(orderBy);
+        }
+    ]
+    [
+        <SEPARATOR> { s2 = span(); } separator = StringLiteral() {
+            args.add(SqlInternalOperators.SEPARATOR.createCall(s2.end(this), separator));
+        }
+    ]
+    <RPAREN>
+    {
+        SqlCall call = op.createCall(qualifier, s.end(this), args);
+        if (nullTreatment != null) {
+            // Wrap in RESPECT_NULLS or IGNORE_NULLS.
+            call = nullTreatment.right.createCall(nullTreatment.left, call);
+        }
+        return call;
     }
 }
 
@@ -4332,7 +4459,8 @@ SqlNode StringLiteral() :
 |
     <BIG_QUERY_DOUBLE_QUOTED_STRING>
     {
-        p = SqlParserUtil.strip(getToken(0).image, DQ, DQ, "\\\"", Casing.UNCHANGED);
+        p = SqlParserUtil.stripQuotes(getToken(0).image, DQ, DQ, "\\\"",
+            Casing.UNCHANGED);
         try {
             return SqlLiteral.createCharString(p, charSet, getPos());
         } catch (java.nio.charset.UnsupportedCharsetException e) {
@@ -4343,7 +4471,8 @@ SqlNode StringLiteral() :
 |
     <BIG_QUERY_QUOTED_STRING>
     {
-        p = SqlParserUtil.strip(getToken(0).image, "'", "'", "\\'", Casing.UNCHANGED);
+        p = SqlParserUtil.stripQuotes(getToken(0).image, "'", "'", "\\'",
+            Casing.UNCHANGED);
         try {
             return SqlLiteral.createCharString(p, charSet, getPos());
         } catch (java.nio.charset.UnsupportedCharsetException e) {
@@ -4826,19 +4955,19 @@ void IdentifierSegment(List<String> names, List<SqlParserPos> positions) :
         }
     |
         <QUOTED_IDENTIFIER> {
-            id = SqlParserUtil.strip(getToken(0).image, DQ, DQ, DQDQ,
+            id = SqlParserUtil.stripQuotes(getToken(0).image, DQ, DQ, DQDQ,
                 quotedCasing);
             pos = getPos().withQuoting(true);
         }
     |
         <BACK_QUOTED_IDENTIFIER> {
-            id = SqlParserUtil.strip(getToken(0).image, "`", "`", "``",
+            id = SqlParserUtil.stripQuotes(getToken(0).image, "`", "`", "``",
                 quotedCasing);
             pos = getPos().withQuoting(true);
         }
     |
         <BRACKET_QUOTED_IDENTIFIER> {
-            id = SqlParserUtil.strip(getToken(0).image, "[", "]", "]]",
+            id = SqlParserUtil.stripQuotes(getToken(0).image, "[", "]", "]]",
                 quotedCasing);
             pos = getPos().withQuoting(true);
         }
@@ -4847,7 +4976,7 @@ void IdentifierSegment(List<String> names, List<SqlParserPos> positions) :
             span = span();
             String image = getToken(0).image;
             image = image.substring(image.indexOf('"'));
-            image = SqlParserUtil.strip(image, DQ, DQ, DQDQ, quotedCasing);
+            image = SqlParserUtil.stripQuotes(image, DQ, DQ, DQDQ, quotedCasing);
         }
         [
             <UESCAPE> <QUOTED_STRING> {
@@ -6281,7 +6410,7 @@ SqlNodeList JsonArrayAggOrderByClause() :
 SqlCall JsonArrayAggFunctionCall() :
 {
     final SqlNode valueExpr;
-    SqlNodeList orderList = null;
+    final SqlNodeList orderList;
     List<SqlNode> list;
     final Span span;
     SqlJsonConstructorNullClause nullClause =
@@ -6516,39 +6645,58 @@ SqlCall MatchRecognizeNavigationPhysical() :
     }
 }
 
+SqlCall withinDistinct(SqlNode arg) :
+{
+    final Span s;
+    final SqlNodeList distinctList;
+}
+{
+    <WITHIN> { s = span(); }
+    <DISTINCT>
+    <LPAREN>
+    distinctList = ExpressionCommaList(s, ExprContext.ACCEPT_SUB_QUERY)
+    <RPAREN> {
+        return SqlStdOperatorTable.WITHIN_DISTINCT.createCall(
+            s.end(this), arg, distinctList);
+    }
+}
+
 SqlCall withinGroup(SqlNode arg) :
 {
-    final Span withinGroupSpan;
+    final Span s;
     final SqlNodeList orderList;
 }
 {
-
-    <WITHIN> { withinGroupSpan = span(); }
+    <WITHIN> { s = span(); }
     <GROUP>
     <LPAREN>
     orderList = OrderBy(true)
     <RPAREN> {
         return SqlStdOperatorTable.WITHIN_GROUP.createCall(
-            withinGroupSpan.end(this), arg, orderList);
+            s.end(this), arg, orderList);
+    }
+}
+
+Pair<SqlParserPos, SqlOperator> NullTreatment() :
+{
+    final Span span;
+}
+{
+    <IGNORE> { span = span(); } <NULLS> {
+        return Pair.of(span.end(this), SqlStdOperatorTable.IGNORE_NULLS);
+    }
+|
+    <RESPECT> { span = span(); } <NULLS> {
+        return Pair.of(span.end(this), SqlStdOperatorTable.RESPECT_NULLS);
     }
 }
 
 SqlCall nullTreatment(SqlCall arg) :
 {
-    final Span span;
+    final Pair<SqlParserPos, SqlOperator> pair;
 }
 {
-    (
-        <IGNORE> { span = span(); } <NULLS> {
-            return SqlStdOperatorTable.IGNORE_NULLS.createCall(
-                span.end(this), arg);
-        }
-    |
-        <RESPECT> { span = span(); } <NULLS> {
-            return SqlStdOperatorTable.RESPECT_NULLS.createCall(
-                span.end(this), arg);
-        }
-    )
+    pair = NullTreatment() { return pair.right.createCall(pair.left, arg); }
 }
 
 /**
@@ -6568,17 +6716,63 @@ SqlCall nullTreatment(SqlCall arg) :
  */
 SqlNode NamedFunctionCall() :
 {
+    SqlCall call;
+    final Span filterSpan;
+    final SqlNode filter;
+    final Span overSpan;
+    final SqlNode over;
+    final Span withinGroupSpan;
+}
+{
+    (
+        LOOKAHEAD(2)
+        call = StringAggFunctionCall()
+    |
+        call = NamedCall()
+    )
+    [
+        LOOKAHEAD(2) call = nullTreatment(call)
+    ]
+    [
+        LOOKAHEAD(2) // decide between WITHIN DISTINCT and WITHIN GROUP
+        call = withinDistinct(call)
+    ]
+    [
+        call = withinGroup(call)
+    ]
+    [
+        <FILTER> { filterSpan = span(); }
+        <LPAREN>
+        <WHERE>
+        filter = Expression(ExprContext.ACCEPT_SUB_QUERY)
+        <RPAREN> {
+            call = SqlStdOperatorTable.FILTER.createCall(
+                filterSpan.end(this), call, filter);
+        }
+    ]
+    [
+        <OVER> { overSpan = span(); }
+        (
+            over = SimpleIdentifier()
+        |
+            over = WindowSpecification()
+        )
+        {
+            call = SqlStdOperatorTable.OVER.createCall(overSpan.end(over), call, over);
+        }
+    ]
+    {
+        return call;
+    }
+}
+
+SqlCall NamedCall() :
+{
     final SqlFunctionCategory funcType;
     final SqlIdentifier qualifiedName;
     final Span s;
     final List<SqlNode> args;
-    SqlCall call;
-    final Span filterSpan;
-    final SqlNode filter;
-    final SqlNode over;
     SqlLiteral quantifier = null;
-    SqlNodeList orderList = null;
-    final Span withinGroupSpan;
 }
 {
     (
@@ -6607,40 +6801,9 @@ SqlNode NamedFunctionCall() :
         }
     )
     {
-        call = createCall(qualifiedName, s.end(this), funcType, quantifier, args);
-    }
-    [
-        LOOKAHEAD(2) call = nullTreatment(call)
-    ]
-    [
-        call = withinGroup(call)
-    ]
-    [
-        <FILTER> { filterSpan = span(); }
-        <LPAREN>
-        <WHERE>
-        filter = Expression(ExprContext.ACCEPT_SUB_QUERY)
-        <RPAREN> {
-            call = SqlStdOperatorTable.FILTER.createCall(
-                filterSpan.end(this), call, filter);
-        }
-    ]
-    [
-        <OVER>
-        (
-            over = SimpleIdentifier()
-        |
-            over = WindowSpecification()
-        )
-        {
-            call = SqlStdOperatorTable.OVER.createCall(s.end(over), call, over);
-        }
-    ]
-    {
-        return call;
+        return createCall(qualifiedName, s.end(this), funcType, quantifier, args);
     }
 }
-
 
 /*
 * Parse Floor/Ceil function parameters
@@ -7097,6 +7260,8 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < APPLY: "APPLY" >
 |   < ARE: "ARE" >
 |   < ARRAY: "ARRAY" >
+|   < ARRAY_AGG: "ARRAY_AGG" >
+|   < ARRAY_CONCAT_AGG: "ARRAY_CONCAT_AGG" >
 |   < ARRAY_MAX_CARDINALITY: "ARRAY_MAX_CARDINALITY" >
 |   < AS: "AS" >
 |   < ASC: "ASC" >
@@ -7241,6 +7406,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < DISPATCH: "DISPATCH" >
 |   < DISTINCT: "DISTINCT" >
 |   < DOMAIN: "DOMAIN" >
+|   < DOT_FORMAT: "DOT" >
 |   < DOUBLE: "DOUBLE" >
 |   < DOW: "DOW" >
 |   < DOY: "DOY" >
@@ -7306,6 +7472,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < GRANT: "GRANT" >
 |   < GRANTED: "GRANTED" >
 |   < GROUP: "GROUP" >
+|   < GROUP_CONCAT: "GROUP_CONCAT" >
 |   < GROUPING: "GROUPING" >
 |   < GROUPS: "GROUPS" >
 |   < HAVING: "HAVING" >
@@ -7316,11 +7483,13 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < HOURS: "HOURS" >
 |   < IDENTITY: "IDENTITY" >
 |   < IGNORE: "IGNORE" >
+|   < ILIKE: "ILIKE" >
 |   < IMMEDIATE: "IMMEDIATE" >
 |   < IMMEDIATELY: "IMMEDIATELY" >
 |   < IMPLEMENTATION: "IMPLEMENTATION" >
 |   < IMPORT: "IMPORT" >
 |   < IN: "IN" >
+|   < INCLUDE: "INCLUDE" >
 |   < INCLUDING: "INCLUDING" >
 |   < INCREMENT: "INCREMENT" >
 |   < INDICATOR: "INDICATOR" >
@@ -7539,6 +7708,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < RETURNS: "RETURNS" >
 |   < REVOKE: "REVOKE" >
 |   < RIGHT: "RIGHT" >
+|   < RLIKE: "RLIKE" >
 |   < ROLE: "ROLE" >
 |   < ROLLBACK: "ROLLBACK" >
 |   < ROLLUP: "ROLLUP" >
@@ -7570,6 +7740,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < SELECT: "SELECT" > { afterTableName(); }
 |   < SELF: "SELF" >
 |   < SENSITIVE: "SENSITIVE" >
+|   < SEPARATOR: "SEPARATOR" >
 |   < SEQUENCE: "SEQUENCE" >
 |   < SERIALIZABLE: "SERIALIZABLE" >
 |   < SERVER: "SERVER" >
@@ -7652,6 +7823,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < STDDEV_POP: "STDDEV_POP" >
 |   < STDDEV_SAMP: "STDDEV_SAMP" >
 |   < STREAM: "STREAM" >
+|   < STRING_AGG: "STRING_AGG" >
 |   < STRUCTURE: "STRUCTURE" >
 |   < STYLE: "STYLE" >
 |   < SUBCLASS_ORIGIN: "SUBCLASS_ORIGIN" >
@@ -7710,6 +7882,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < UNION: "UNION" >
 |   < UNIQUE: "UNIQUE" >
 |   < UNKNOWN: "UNKNOWN" >
+|   < UNPIVOT: "UNPIVOT" >
 |   < UNNAMED: "UNNAMED" >
 |   < UNNEST: "UNNEST" >
 |   < UPDATE: "UPDATE" > { beforeTableName(); }
