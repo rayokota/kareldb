@@ -20,11 +20,11 @@ limitations under the License.
     <parent>
         <groupId>io.kareldb</groupId>
         <artifactId>kareldb-parent</artifactId>
-        <version>1.0.4-SNAPSHOT</version>
+        <version>1.0.4</version>
     </parent>
 
     <artifactId>kareldb-server</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <properties>
