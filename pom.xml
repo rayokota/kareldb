@@ -54,17 +54,17 @@ limitations under the License.
 
     <properties>
         <!-- This list is in alphabetical order. -->
-        <avatica.version>1.17.0</avatica.version>
+        <avatica.version>1.18.0</avatica.version>
         <avro.version>1.10.2</avro.version>
         <bouncycastle.version>1.68</bouncycastle.version>
-        <calcite.version>1.26.0</calcite.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
+        <calcite.version>1.27.0</calcite.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
         <findbugs.version>3.0.2</findbugs.version>
         <guava.version>29.0-jre</guava.version>
         <hamcrest.version>2.2</hamcrest.version>
         <jackson.version>2.12.3</jackson.version>
         <javacc-maven-plugin.version>2.6</javacc-maven-plugin.version>
-        <jetty.version>9.4.15.v20190215</jetty.version>
+        <jetty.version>9.4.31.v20200723</jetty.version>
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.version>2.8.0</kafka.version>
@@ -72,12 +72,12 @@ limitations under the License.
         <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
         <maven-scm-provider.version>1.10.0</maven-scm-provider.version>
-        <mockito.version>3.9.0</mockito.version>
+        <mockito.version>3.11.0</mockito.version>
         <omid.version>1.0.2</omid.version>
         <opencsv.version>2.3</opencsv.version>
-        <scala.version>2.13.4</scala.version>
+        <scala.version>2.13.6</scala.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <sqlline.version>1.9.0</sqlline.version>
+        <sqlline.version>1.11.0</sqlline.version>
     </properties>
 
     <dependencyManagement>
@@ -480,7 +480,7 @@ limitations under the License.
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.3.0</version>
                     <executions>
                         <execution>
                             <id>attach-javadocs</id>
@@ -575,7 +575,7 @@ limitations under the License.
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -588,7 +588,7 @@ limitations under the License.
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -622,7 +622,7 @@ limitations under the License.
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.2.0</version>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
