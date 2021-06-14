@@ -72,7 +72,7 @@ limitations under the License.
         <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
         <maven-scm-provider.version>1.10.0</maven-scm-provider.version>
-        <mockito.version>3.11.0</mockito.version>
+        <mockito.version>3.11.1</mockito.version>
         <omid.version>1.0.2</omid.version>
         <opencsv.version>2.3</opencsv.version>
         <scala.version>2.13.6</scala.version>
