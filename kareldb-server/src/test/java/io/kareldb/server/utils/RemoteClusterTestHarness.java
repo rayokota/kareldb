@@ -14,7 +14,6 @@
 
 package io.kareldb.server.utils;
 
-import com.google.common.io.Files;
 import io.kareldb.KarelDbConfig;
 import io.kareldb.KarelDbEngine;
 import io.kareldb.server.KarelDbMain;
@@ -31,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.nio.file.Files;
 import java.util.Properties;
 
 /**
@@ -58,7 +58,7 @@ public abstract class RemoteClusterTestHarness extends ClusterTestHarness {
     public void setUp() throws Exception {
         super.setUp();
         if (tempDir == null) {
-            tempDir = Files.createTempDir();
+            tempDir = Files.createTempDirectory("tmp").toFile();
         }
         props = new Properties();
         setUpServer();

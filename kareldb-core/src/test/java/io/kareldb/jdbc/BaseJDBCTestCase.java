@@ -19,7 +19,6 @@
  */
 package io.kareldb.jdbc;
 
-import com.google.common.io.Files;
 import io.kareldb.KarelDbEngine;
 import io.kareldb.schema.SchemaFactory;
 import io.kareldb.utils.ClusterTestHarness;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.nio.file.Files;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
@@ -102,8 +102,7 @@ public abstract class BaseJDBCTestCase extends ClusterTestHarness {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        tempDir = Files.createTempDir();
-
+        tempDir = Files.createTempDirectory("tmp").toFile();
     }
 
     @After
