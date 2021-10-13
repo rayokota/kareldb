@@ -16,7 +16,6 @@
  */
 package io.kareldb.server.utils;
 
-import com.google.common.io.Files;
 import io.kareldb.KarelDbConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -30,6 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -66,7 +66,7 @@ public abstract class RemoteClusterHttpAuthTestHarness extends RemoteClusterTest
 
     @Before
     public void setUp() throws Exception {
-        tempDir = Files.createTempDir();
+        tempDir = Files.createTempDirectory("tmp").toFile();
         passwordFile = new File(tempDir, "password-file");
         jaasConfigFile = new File(tempDir, "jaas_config.file");
         writePasswordFile(passwordFile);
