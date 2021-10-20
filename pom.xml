@@ -57,7 +57,7 @@ limitations under the License.
         <avatica.version>1.19.0</avatica.version>
         <avro.version>1.10.2</avro.version>
         <bouncycastle.version>1.69</bouncycastle.version>
-        <calcite.version>1.27.0</calcite.version>
+        <calcite.version>1.28.0</calcite.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <findbugs.version>3.0.2</findbugs.version>
         <guava.version>31.0-jre</guava.version>
@@ -115,8 +115,7 @@ limitations under the License.
             </dependency>
             <dependency>
                 <groupId>org.apache.calcite</groupId>
-                <artifactId>calcite-core</artifactId>
-                <type>test-jar</type>
+                <artifactId>calcite-testkit</artifactId>
                 <version>${calcite.version}</version>
             </dependency>
             <dependency>
