@@ -135,8 +135,7 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>org.apache.calcite</groupId>
-            <artifactId>calcite-core</artifactId>
-            <type>test-jar</type>
+            <artifactId>calcite-testkit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

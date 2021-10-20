@@ -35,25 +35,18 @@ import java.util.function.Predicate;
  * {@link org.apache.calcite.adapter.enumerable.EnumerableConvention enumerable calling convention}.
  */
 public class EnumerableTableModifyExtensionRule extends ConverterRule {
+    public static final ConverterRule INSTANCE = Config.INSTANCE
+        .withConversion(
+            LogicalTableModify.class,
+            (Predicate<RelNode>) r -> true,
+            Convention.NONE,
+            EnumerableConvention.INSTANCE,
+            "EnumerableTableModificationExtensionRule")
+        .withRuleFactory(EnumerableTableModifyExtensionRule::new)
+        .toRule(EnumerableTableModifyExtensionRule.class);
 
-    public static final EnumerableTableModifyExtensionRule INSTANCE =
-        new EnumerableTableModifyExtensionRule(RelFactories.LOGICAL_BUILDER);
-
-    /**
-     * Creates an EnumerableTableModifyRule.
-     *
-     * @param relBuilderFactory Builder for relational expressions
-     */
-    public EnumerableTableModifyExtensionRule(RelBuilderFactory relBuilderFactory) {
-        super(Config.EMPTY
-            .withRelBuilderFactory(relBuilderFactory)
-            .as(Config.class)
-            .withConversion(
-                LogicalTableModify.class,
-                (Predicate<RelNode>) r -> true,
-                Convention.NONE,
-                EnumerableConvention.INSTANCE,
-                "EnumerableTableModificationExtensionRule"));
+    private EnumerableTableModifyExtensionRule(Config config) {
+        super(config);
     }
 
     @Override
