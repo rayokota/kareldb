@@ -120,6 +120,16 @@ public class HttpServerExtension extends HttpServer {
             }
 
             @Override
+            public String getKerberosServiceName() {
+                return null;
+            }
+
+            @Override
+            public String getKerberosHostName() {
+                return null;
+            }
+
+            @Override
             public String getKerberosPrincipal() {
                 return null;
             }
