@@ -28,6 +28,7 @@ import org.apache.kafka.clients.NetworkClient;
 import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
 import org.apache.kafka.common.metrics.JmxReporter;
 import org.apache.kafka.common.metrics.KafkaMetricsContext;
@@ -236,6 +237,8 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
                 while (!stopped.get()) {
                     coordinator.poll(Integer.MAX_VALUE);
                 }
+            } catch (WakeupException we) {
+                // do nothing because the thread is closing -- see stop()
             } catch (Throwable t) {
                 LOG.error("Unexpected exception in group processing thread", t);
             }
