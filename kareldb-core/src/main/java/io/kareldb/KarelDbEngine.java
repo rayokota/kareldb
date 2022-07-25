@@ -148,9 +148,13 @@ public class KarelDbEngine implements Configurable, Closeable {
     }
 
     public void sync() {
-        CompletableFuture<Void> commitsFuture = CompletableFuture.runAsync(() -> commits.sync());
-        CompletableFuture<Void> timestampsFuture = CompletableFuture.runAsync(() ->
-            timestamps.sync()).thenRunAsync(() -> transactionManager.init());
+        CompletableFuture<Void> commitsFuture = CompletableFuture
+            .runAsync(() -> commits.reset())
+            .thenRunAsync(() -> commits.sync());
+        CompletableFuture<Void> timestampsFuture = CompletableFuture
+            .runAsync(() -> timestamps.reset())
+            .thenRunAsync(() -> timestamps.sync())
+            .thenRunAsync(() -> transactionManager.init());
         CompletableFuture.allOf(commitsFuture, timestampsFuture).join();
         schema.sync();
     }
