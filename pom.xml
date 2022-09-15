@@ -63,7 +63,7 @@ limitations under the License.
         <guava.version>31.1-jre</guava.version>
         <hamcrest.version>2.2</hamcrest.version>
         <jackson.version>2.13.4</jackson.version>
-        <javacc-maven-plugin.version>2.6</javacc-maven-plugin.version>
+        <javacc-maven-plugin.version>3.0.0</javacc-maven-plugin.version>
         <jetty.version>9.4.46.v20220331</jetty.version>
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.13</kafka.scala.version>
