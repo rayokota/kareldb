@@ -64,7 +64,7 @@ limitations under the License.
         <hamcrest.version>2.2</hamcrest.version>
         <jackson.version>2.13.4</jackson.version>
         <javacc-maven-plugin.version>2.6</javacc-maven-plugin.version>
-        <jetty.version>9.4.46.v20220331</jetty.version>
+        <jetty.version>11.0.12</jetty.version>
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.13</kafka.scala.version>
         <kafka.version>3.2.2</kafka.version>
