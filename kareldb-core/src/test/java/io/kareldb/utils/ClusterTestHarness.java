@@ -116,8 +116,7 @@ public abstract class ClusterTestHarness {
             1,
             false,
             1,
-            (short) 1,
-            false
+            (short) 1
         );
         injectProperties(props);
         return KafkaConfig.fromProps(props);
