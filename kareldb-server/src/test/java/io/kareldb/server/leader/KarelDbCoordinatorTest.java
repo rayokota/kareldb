@@ -338,7 +338,7 @@ public class KarelDbCoordinatorTest {
             .setProtocolName(KarelDbCoordinator.KDB_SUBPROTOCOL_V0)
             .setMemberId(memberId)
             .setLeader(leaderId)
-            .setMembers(Collections.emptyList(), (short) 0)
+            .setMembers(Collections.emptyList()), (short) 0
         );
     }
 
