@@ -151,6 +151,7 @@ void TableElement(List<SqlNode> list) :
     final SqlDataTypeSpec type;
     final boolean nullable;
     final SqlNode e;
+    final SqlNode constraint;
     SqlIdentifier name = null;
     final SqlNodeList columnList;
     final Span s = Span.of();

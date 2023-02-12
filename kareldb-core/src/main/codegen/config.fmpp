@@ -99,6 +99,7 @@ data: {
       "CURSOR_NAME"
       "DATA"
       "DATABASE"
+      "DATE_TRUNC"
       "DATETIME_INTERVAL_CODE"
       "DATETIME_INTERVAL_PRECISION"
       "DAYS"
@@ -228,6 +229,7 @@ data: {
       "PRIVILEGES"
       "PUBLIC"
       "QUARTER"
+      "QUARTERS"
       "READ"
       "RELATIVE"
       "REPEATABLE"
@@ -329,8 +331,12 @@ data: {
       "TABLE_NAME"
       "TEMPORARY"
       "TIES"
+      "TIME_DIFF"
+      "TIME_TRUNC"
       "TIMESTAMPADD"
       "TIMESTAMPDIFF"
+      "TIMESTAMP_DIFF"
+      "TIMESTAMP_TRUNC"
       "TOP_LEVEL_COUNT"
       "TRANSACTION"
       "TRANSACTIONS_ACTIVE"
@@ -359,6 +365,7 @@ data: {
       "VERSION"
       "VIEW"
       "WEEK"
+      "WEEKS"
       "WORK"
       "WRAPPER"
       "WRITE"
@@ -461,6 +468,7 @@ data: {
     includeCompoundIdentifier: true
     includeBraces: true
     includeAdditionalDeclarations: false
+    includeParsingStringLiteralAsArrayLiteral: false
   }
 }
 
