@@ -39,12 +39,7 @@ public class Driver extends org.apache.calcite.jdbc.Driver {
     }
 
     public Driver() {
-        super();
-    }
-
-    @Override
-    protected Function0<CalcitePrepare> createPrepareFactory() {
-        return io.kareldb.jdbc.CalcitePrepareImpl::new;
+        super(io.kareldb.jdbc.CalcitePrepareImpl::new);
     }
 
     @Override
