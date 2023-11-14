@@ -19,6 +19,7 @@ package org.apache.calcite.jdbc;
 import org.apache.calcite.avatica.AvaticaConnection;
 
 public class CalciteMetaImplShim extends CalciteMetaImpl {
+    @SuppressWarnings("deprecation")
     public CalciteMetaImplShim(AvaticaConnection connection) {
         super((CalciteConnectionImpl) connection);
     }
