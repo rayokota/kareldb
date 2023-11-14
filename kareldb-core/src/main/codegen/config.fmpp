@@ -24,6 +24,7 @@ data: {
       "org.apache.calcite.schema.ColumnStrategy"
       "org.apache.calcite.sql.SqlCreate"
       "org.apache.calcite.sql.SqlDrop"
+      "org.apache.calcite.sql.SqlTruncate"
       "org.apache.calcite.sql.ddl.SqlDdlNodes"
       "org.apache.calcite.sql.ddl.SqlAlterTableExtension",
       "org.apache.calcite.sql.ddl.SqlCreateTableExtension",
@@ -95,6 +96,7 @@ data: {
       "CONSTRAINTS"
       "CONSTRAINT_SCHEMA"
       "CONSTRUCTOR"
+      "CONTAINS_SUBSTR"
       "CONTINUE"
       "CURSOR_NAME"
       "DATA"
@@ -446,6 +448,13 @@ data: {
       "SqlDropType"
       "SqlDropView"
       "SqlDropFunction"
+    ]
+
+    # List of methods for parsing extensions to "TRUNCATE" calls.
+    # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlTruncate".
+    truncateStatementParserMethods: [
+      "SqlTruncateTable"
     ]
 
     # Binary operators tokens
