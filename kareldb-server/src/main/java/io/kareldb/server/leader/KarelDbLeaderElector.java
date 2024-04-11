@@ -77,6 +77,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
     private final Metrics metrics;
     private final Metadata metadata;
     private final long retryBackoffMs;
+    private final long retryBackoffMaxMs;
     private final KarelDbCoordinator coordinator;
     private final List<URI> listeners;
     private final KarelDbIdentity myIdentity;
@@ -110,11 +111,13 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
 
             this.metrics = new Metrics(metricConfig, reporters, time, metricsContext);
             this.retryBackoffMs = clientConfig.getLong(CommonClientConfigs.RETRY_BACKOFF_MS_CONFIG);
+            this.retryBackoffMaxMs = clientConfig.getLong(CommonClientConfigs.RETRY_BACKOFF_MAX_MS_CONFIG);
             String groupId = config.getString(KarelDbConfig.CLUSTER_GROUP_ID_CONFIG);
             LogContext logContext = new LogContext("[KarelDB clientId=" + clientId + ", groupId="
                 + groupId + "] ");
             this.metadata = new Metadata(
                 retryBackoffMs,
+                retryBackoffMaxMs,
                 clientConfig.getLong(CommonClientConfigs.METADATA_MAX_AGE_CONFIG),
                 logContext,
                 new ClusterResourceListeners()
@@ -169,6 +172,7 @@ public class KarelDbLeaderElector implements KarelDbRebalanceListener, UrlProvid
                 metricGrpPrefix,
                 time,
                 retryBackoffMs,
+                retryBackoffMaxMs,
                 myIdentity,
                 this
             );
