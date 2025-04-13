@@ -80,7 +80,7 @@ public abstract class ClusterTestHarness {
         for (int i = 0; i < servers.size(); i++) {
             serverUrls[i] =
                 Utils.formatAddress(
-                    servers.get(i).config().effectiveAdvertisedListeners().head().host(),
+                    servers.get(i).config().effectiveAdvertisedBrokerListeners().head().host(),
                     servers.get(i).boundPort(listenerType)
                 );
         }
