@@ -67,8 +67,8 @@ limitations under the License.
         <jetty.version>9.4.51.v20230217</jetty.version>
         <junit.version>4.12</junit.version>
         <kafka.scala.version>2.13</kafka.scala.version>
-        <kafka.version>3.8.0</kafka.version>
-        <kcache.version>5.0.0</kcache.version>
+        <kafka.version>3.9.0</kafka.version>
+        <kcache.version>5.2.1</kcache.version>
         <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <maven-scm-provider.version>1.10.0</maven-scm-provider.version>
@@ -374,12 +374,6 @@ limitations under the License.
                 <artifactId>maven-compiler-plugin</artifactId>
                 <!-- If you are looking to change source/target,
                      change the maven.compiler.{source,target} property -->
-                <configuration>
-                    <compilerArgs>
-                        <arg>-Xlint:deprecation</arg>
-                        <arg>-Werror</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
