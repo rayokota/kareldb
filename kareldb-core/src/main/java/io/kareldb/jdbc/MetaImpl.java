@@ -149,8 +149,7 @@ public class MetaImpl extends CalciteMetaImplShim {
         return DRIVER.connect(schema, typeFactory);
     }
 
-    public boolean syncResults(StatementHandle h, QueryState state, long offset)
-        throws NoSuchStatementException {
+    public boolean syncResults(StatementHandle h, QueryState state, long offset) {
         // Doesn't have application in Calcite itself.
         throw new UnsupportedOperationException();
     }
