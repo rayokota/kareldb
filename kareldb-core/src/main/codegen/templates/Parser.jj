@@ -6202,7 +6202,7 @@ SqlNode BuiltinFunctionCall() :
                 <FROM> {
                     if (null == flag && null == trimChars) {
                         throw SqlUtil.newContextException(getPos(),
-                            RESOURCE.illegalFromEmpty());
+                            RESOURCE.selectMissingFrom());
                     }
                 }
             |
