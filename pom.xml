@@ -58,7 +58,7 @@ limitations under the License.
         <avro.version>1.11.3</avro.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <calcite.version>1.39.0</calcite.version>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <findbugs.version>3.0.2</findbugs.version>
         <guava.version>33.3.1-jre</guava.version>
         <hamcrest.version>2.2</hamcrest.version>
